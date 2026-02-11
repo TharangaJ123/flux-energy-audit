@@ -1,5 +1,4 @@
 const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
 
 const options = {
   definition: {
@@ -7,24 +6,32 @@ const options = {
     info: {
       title: 'Flux Energy Audit API',
       version: '1.0.0',
-      description: 'API documentation for Flux Energy Audit Backend',
-      license: {
-        name: 'ISC',
-      },
+      description: 'API documentation for Flux Energy Audit application',
     },
     servers: [
       {
-        url: 'http://localhost:5000/api',
-        description: 'Development server',
+        url: 'http://localhost:5000',
+        description: 'Local server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
       },
     ],
   },
-  apis: ['./src/routes/*.js', './src/models/*.js'], // Files containing annotations
+  apis: ['./src/modules/**/*.route.js'], // Files containing annotations
 };
 
-const specs = swaggerJsdoc(options);
+const swaggerSpec = swaggerJsdoc(options);
 
-module.exports = {
-  swaggerUi,
-  specs,
-};
+module.exports = swaggerSpec;
