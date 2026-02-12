@@ -16,9 +16,11 @@ app.use(express.json());
 app.use(cors());
 
 const userRoutes = require('./modules/user-management/userManagement.route');
+const costRoutes = require('./modules/cost-management/costManagement.route');
 
 // Define Routes
 app.use('/api/users', userRoutes);
+app.use('/api/costs', costRoutes);
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
