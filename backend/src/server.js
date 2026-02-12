@@ -16,10 +16,12 @@ app.use(express.json());
 app.use(cors());
 
 const userRoutes = require('./modules/user-management/userManagement.route');
+const energyAuditRoutes = require('./modules/energy-audit-management/energyAuditManagement.route');
 const costRoutes = require('./modules/cost-management/costManagement.route');
 
 // Define Routes
 app.use('/api/users', userRoutes);
+app.use('/api/energy-audits', energyAuditRoutes);
 app.use('/api/costs', costRoutes);
 
 const swaggerUi = require('swagger-ui-express');
