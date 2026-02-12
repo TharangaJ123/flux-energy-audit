@@ -21,13 +21,18 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const userRoutes = require('./modules/user-management/userManagement.route');
+const energyAuditRoutes = require('./modules/energy-audit-management/energyAuditManagement.route');
+
 // Define Routes
-app.get('/', (req, res) => {
-  res.send('Flux Energy Audit API is running...');
-});
+app.use('/api/users', userRoutes);
+app.use('/api/energy-audits', energyAuditRoutes);
+
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const PORT = process.env.PORT || 5000;
 
