@@ -1,16 +1,16 @@
 const applianceService = require('./appliancemanagement.service');
 const { applianceValidationSchema, updateApplianceValidationSchema } = require('./appliancemanagement.validation');
 
-/**
- * Create a new appliance
- */
+// Create a new appliance record
 const createAppliance = async (req, res) => {
     try {
+        // Validate request body
         const { error } = applianceValidationSchema.validate(req.body);
         if (error) {
             return res.status(400).json({ message: error.details[0].message });
         }
 
+        // Call service to add appliance
         const appliance = await applianceService.addAppliance(req.body, req.user.id);
         res.status(201).json({
             message: 'Appliance added successfully',
@@ -21,9 +21,7 @@ const createAppliance = async (req, res) => {
     }
 };
 
-/**
- * Get all appliances for the logged-in user
- */
+// Retrieve all appliances for the current user
 const getAllAppliances = async (req, res) => {
     try {
         const appliances = await applianceService.getAppliancesByUser(req.user.id);
@@ -37,9 +35,7 @@ const getAllAppliances = async (req, res) => {
     }
 };
 
-/**
- * Get an appliance by ID
- */
+// Get a single appliance by its ID
 const getAppliance = async (req, res) => {
     try {
         const appliance = await applianceService.getApplianceById(req.params.id, req.user.id);
@@ -55,11 +51,10 @@ const getAppliance = async (req, res) => {
     }
 };
 
-/**
- * Update an appliance
- */
+// Update an existing appliance
 const updateAppliance = async (req, res) => {
     try {
+        // Validate update data
         const { error } = updateApplianceValidationSchema.validate(req.body, { allowUnknown: true });
         if (error) {
             return res.status(400).json({ message: error.details[0].message });
@@ -78,9 +73,7 @@ const updateAppliance = async (req, res) => {
     }
 };
 
-/**
- * Delete an appliance
- */
+// Delete an appliance
 const deleteAppliance = async (req, res) => {
     try {
         const appliance = await applianceService.deleteAppliance(req.params.id, req.user.id);
@@ -95,9 +88,7 @@ const deleteAppliance = async (req, res) => {
     }
 };
 
-/**
- * Get energy audit report
- */
+// Get energy consumption report with weather data
 const getEnergyAudit = async (req, res) => {
     try {
         const { city } = req.query;
@@ -111,9 +102,7 @@ const getEnergyAudit = async (req, res) => {
     }
 };
 
-/**
- * Get appliance statistics
- */
+// Get summary statistics for all appliances
 const getApplianceStats = async (req, res) => {
     try {
         const stats = await applianceService.getApplianceStats(req.user.id);
@@ -135,4 +124,5 @@ module.exports = {
     getEnergyAudit,
     getApplianceStats,
 };
+
 

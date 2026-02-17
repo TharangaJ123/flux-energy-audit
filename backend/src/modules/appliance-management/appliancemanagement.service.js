@@ -1,9 +1,8 @@
 const Appliance = require('./appliancemanagement.model');
 const { runInTransaction } = require('../../util/transaction');
+const weatherService = require('../../services/weatherService');
 
-/**
- * Add a new appliance
- */
+// Save a new appliance to the database within a transaction
 const addAppliance = async (applianceData, userId) => {
     return await runInTransaction(async (session) => {
         const appliance = new Appliance({
@@ -14,23 +13,17 @@ const addAppliance = async (applianceData, userId) => {
     });
 };
 
-/**
- * Get all appliances for a user
- */
+// Retrieve all appliances belonging to a specific user
 const getAppliancesByUser = async (userId) => {
     return await Appliance.find({ user: userId }).sort({ createdAt: -1 });
 };
 
-/**
- * Get a single appliance by ID
- */
+// Find a single appliance by ID and UserID (for ownership check)
 const getApplianceById = async (applianceId, userId) => {
     return await Appliance.findOne({ _id: applianceId, user: userId });
 };
 
-/**
- * Update an appliance
- */
+// Update appliance details within a transaction
 const updateAppliance = async (applianceId, userId, updateData) => {
     return await runInTransaction(async (session) => {
         return await Appliance.findOneAndUpdate(
@@ -41,9 +34,7 @@ const updateAppliance = async (applianceId, userId, updateData) => {
     });
 };
 
-/**
- * Delete an appliance
- */
+// Permanently remove an appliance record
 const deleteAppliance = async (applianceId, userId) => {
     return await runInTransaction(async (session) => {
         return await Appliance.findOneAndDelete(
@@ -53,18 +44,14 @@ const deleteAppliance = async (applianceId, userId) => {
     });
 };
 
-const weatherService = require('../../services/weatherService');
-
-/**
- * Get total energy consumption for a user with weather insights
- */
+// Calculate total consumption and merge with external weather insights
 const getTotalEnergyConsumption = async (userId, city) => {
     const appliances = await Appliance.find({ user: userId });
 
     const dailyTotal = appliances.reduce((sum, app) => sum + app.dailyEnergyConsumption, 0);
     const monthlyTotal = appliances.reduce((sum, app) => sum + app.monthlyEnergyConsumption, 0);
 
-    // Fetch weather data for insights
+    // Fetch dynamic insights from weather service
     const weatherData = await weatherService.getCurrentWeather(city);
 
     return {
@@ -81,9 +68,7 @@ const getTotalEnergyConsumption = async (userId, city) => {
     };
 };
 
-/**
- * Get statistical summary of appliances
- */
+// Generate high-level stats (Total power, highest consumer, category counts)
 const getApplianceStats = async (userId) => {
     const appliances = await Appliance.find({ user: userId });
 
@@ -98,7 +83,7 @@ const getApplianceStats = async (userId) => {
 
     const totalPower = appliances.reduce((sum, app) => sum + app.powerConsumption, 0);
 
-    // Find the appliance with the highest monthly consumption
+    // Sort to find the most expensive device to run
     const sortedByConsumption = [...appliances].sort((a, b) =>
         b.monthlyEnergyConsumption - a.monthlyEnergyConsumption
     );
@@ -109,7 +94,7 @@ const getApplianceStats = async (userId) => {
         category: sortedByConsumption[0].category
     };
 
-    // Group by category
+    // Calculate how many devices are in each category
     const categoryBreakdown = appliances.reduce((acc, app) => {
         const cat = app.category || 'General';
         acc[cat] = (acc[cat] || 0) + 1;
@@ -133,5 +118,6 @@ module.exports = {
     getTotalEnergyConsumption,
     getApplianceStats
 };
+
 
 

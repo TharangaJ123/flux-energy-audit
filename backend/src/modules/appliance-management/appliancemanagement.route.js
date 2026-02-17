@@ -3,10 +3,9 @@ const router = express.Router();
 const applianceController = require('./appliancemanagement.controller');
 const { protect, authorize } = require('../../middleware/auth');
 
-// All appliance routes require authentication and specific roles
+// Middleware: All routes below require login and appropriate roles
 router.use(protect);
 router.use(authorize('user', 'admin'));
-
 
 /**
  * @swagger
@@ -47,20 +46,6 @@ router.use(authorize('user', 'admin'));
  * /api/appliances:
  *   post:
  *     summary: Add a new appliance
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Appliance'
- *     responses:
- *       201:
- *         description: Appliance added successfully
- *       400:
- *         description: Validation error
  */
 router.post('/', applianceController.createAppliance);
 
@@ -69,12 +54,6 @@ router.post('/', applianceController.createAppliance);
  * /api/appliances:
  *   get:
  *     summary: Get all appliances for the logged-in user
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of appliances retrieved successfully
  */
 router.get('/', applianceController.getAllAppliances);
 
@@ -83,12 +62,6 @@ router.get('/', applianceController.getAllAppliances);
  * /api/appliances/audit:
  *   get:
  *     summary: Get energy consumption audit report
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Energy audit report retrieved successfully
  */
 router.get('/audit', applianceController.getEnergyAudit);
 
@@ -97,12 +70,6 @@ router.get('/audit', applianceController.getEnergyAudit);
  * /api/appliances/stats:
  *   get:
  *     summary: Get statistical summary of appliances
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Statistics retrieved successfully
  */
 router.get('/stats', applianceController.getApplianceStats);
 
@@ -111,20 +78,6 @@ router.get('/stats', applianceController.getApplianceStats);
  * /api/appliances/{id}:
  *   get:
  *     summary: Get a specific appliance
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Appliance retrieved successfully
- *       404:
- *         description: Appliance not found
  */
 router.get('/:id', applianceController.getAppliance);
 
@@ -133,23 +86,6 @@ router.get('/:id', applianceController.getAppliance);
  * /api/appliances/{id}:
  *   put:
  *     summary: Update an appliance
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Appliance'
- *     responses:
- *       200:
- *         description: Appliance updated successfully
  */
 router.put('/:id', applianceController.updateAppliance);
 
@@ -158,19 +94,8 @@ router.put('/:id', applianceController.updateAppliance);
  * /api/appliances/{id}:
  *   delete:
  *     summary: Delete an appliance
- *     tags: [Appliances]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Appliance deleted successfully
  */
 router.delete('/:id', applianceController.deleteAppliance);
 
 module.exports = router;
+
