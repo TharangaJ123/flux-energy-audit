@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const applianceController = require('./appliancemanagement.controller');
-const { protect } = require('../../middleware/auth');
+const { protect, authorize } = require('../../middleware/auth');
 
-// All appliance routes require authentication
+// All appliance routes require authentication and specific roles
 router.use(protect);
+router.use(authorize('user', 'admin'));
+
 
 /**
  * @swagger
@@ -89,6 +91,20 @@ router.get('/', applianceController.getAllAppliances);
  *         description: Energy audit report retrieved successfully
  */
 router.get('/audit', applianceController.getEnergyAudit);
+
+/**
+ * @swagger
+ * /api/appliances/stats:
+ *   get:
+ *     summary: Get statistical summary of appliances
+ *     tags: [Appliances]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
+router.get('/stats', applianceController.getApplianceStats);
 
 /**
  * @swagger

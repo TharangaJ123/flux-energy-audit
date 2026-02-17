@@ -111,6 +111,21 @@ const getEnergyAudit = async (req, res) => {
     }
 };
 
+/**
+ * Get appliance statistics
+ */
+const getApplianceStats = async (req, res) => {
+    try {
+        const stats = await applianceService.getApplianceStats(req.user.id);
+        res.status(200).json({
+            message: 'Appliance statistics retrieved successfully',
+            data: stats,
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching appliance statistics', error: err.message });
+    }
+};
+
 module.exports = {
     createAppliance,
     getAllAppliances,
@@ -118,4 +133,6 @@ module.exports = {
     updateAppliance,
     deleteAppliance,
     getEnergyAudit,
+    getApplianceStats,
 };
+

@@ -81,12 +81,57 @@ const getTotalEnergyConsumption = async (userId, city) => {
     };
 };
 
+/**
+ * Get statistical summary of appliances
+ */
+const getApplianceStats = async (userId) => {
+    const appliances = await Appliance.find({ user: userId });
+
+    if (appliances.length === 0) {
+        return {
+            totalAppliances: 0,
+            totalPowerWatts: 0,
+            highestConsumer: null,
+            categoryBreakdown: {}
+        };
+    }
+
+    const totalPower = appliances.reduce((sum, app) => sum + app.powerConsumption, 0);
+
+    // Find the appliance with the highest monthly consumption
+    const sortedByConsumption = [...appliances].sort((a, b) =>
+        b.monthlyEnergyConsumption - a.monthlyEnergyConsumption
+    );
+
+    const highestConsumer = {
+        name: sortedByConsumption[0].name,
+        monthlyKWh: sortedByConsumption[0].monthlyEnergyConsumption,
+        category: sortedByConsumption[0].category
+    };
+
+    // Group by category
+    const categoryBreakdown = appliances.reduce((acc, app) => {
+        const cat = app.category || 'General';
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+    }, {});
+
+    return {
+        totalAppliances: appliances.length,
+        totalPowerWatts: totalPower,
+        highestConsumer,
+        categoryBreakdown
+    };
+};
+
 module.exports = {
     addAppliance,
     getAppliancesByUser,
     getApplianceById,
     updateAppliance,
     deleteAppliance,
-    getTotalEnergyConsumption
+    getTotalEnergyConsumption,
+    getApplianceStats
 };
+
 
