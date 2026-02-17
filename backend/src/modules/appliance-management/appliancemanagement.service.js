@@ -53,19 +53,25 @@ const deleteAppliance = async (applianceId, userId) => {
     });
 };
 
+const weatherService = require('../../services/weatherService');
+
 /**
- * Get total energy consumption for a user
+ * Get total energy consumption for a user with weather insights
  */
-const getTotalEnergyConsumption = async (userId) => {
+const getTotalEnergyConsumption = async (userId, city) => {
     const appliances = await Appliance.find({ user: userId });
 
     const dailyTotal = appliances.reduce((sum, app) => sum + app.dailyEnergyConsumption, 0);
     const monthlyTotal = appliances.reduce((sum, app) => sum + app.monthlyEnergyConsumption, 0);
 
+    // Fetch weather data for insights
+    const weatherData = await weatherService.getCurrentWeather(city);
+
     return {
         dailyTotalKWh: dailyTotal,
         monthlyTotalKWh: monthlyTotal,
         applianceCount: appliances.length,
+        weatherInsights: weatherData,
         appliances: appliances.map(app => ({
             id: app._id,
             name: app.name,

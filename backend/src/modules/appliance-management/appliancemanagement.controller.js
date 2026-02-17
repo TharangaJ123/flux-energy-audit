@@ -100,7 +100,8 @@ const deleteAppliance = async (req, res) => {
  */
 const getEnergyAudit = async (req, res) => {
     try {
-        const report = await applianceService.getTotalEnergyConsumption(req.user.id);
+        const { city } = req.query;
+        const report = await applianceService.getTotalEnergyConsumption(req.user.id, city);
         res.status(200).json({
             message: 'Energy audit retrieved successfully',
             data: report,
