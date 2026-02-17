@@ -1,14 +1,17 @@
 const Appliance = require('./appliancemanagement.model');
+const { runInTransaction } = require('../../util/transaction');
 
 /**
  * Add a new appliance
  */
 const addAppliance = async (applianceData, userId) => {
-    const appliance = new Appliance({
-        ...applianceData,
-        user: userId,
+    return await runInTransaction(async (session) => {
+        const appliance = new Appliance({
+            ...applianceData,
+            user: userId,
+        });
+        return await appliance.save({ session });
     });
-    return await appliance.save();
 };
 
 /**
@@ -29,18 +32,25 @@ const getApplianceById = async (applianceId, userId) => {
  * Update an appliance
  */
 const updateAppliance = async (applianceId, userId, updateData) => {
-    return await Appliance.findOneAndUpdate(
-        { _id: applianceId, user: userId },
-        { $set: updateData },
-        { new: true, runValidators: true }
-    );
+    return await runInTransaction(async (session) => {
+        return await Appliance.findOneAndUpdate(
+            { _id: applianceId, user: userId },
+            { $set: updateData },
+            { new: true, runValidators: true, session }
+        );
+    });
 };
 
 /**
  * Delete an appliance
  */
 const deleteAppliance = async (applianceId, userId) => {
-    return await Appliance.findOneAndDelete({ _id: applianceId, user: userId });
+    return await runInTransaction(async (session) => {
+        return await Appliance.findOneAndDelete(
+            { _id: applianceId, user: userId },
+            { session }
+        );
+    });
 };
 
 /**
@@ -73,3 +83,4 @@ module.exports = {
     deleteAppliance,
     getTotalEnergyConsumption
 };
+
