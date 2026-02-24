@@ -1,5 +1,8 @@
 const Joi = require('joi');
 
+
+//creating a new carbon footprint record with Validation 
+
 const createCarbonRecord = Joi.object({
     month: Joi.string().required().messages({
         'string.empty': 'Month is required',
@@ -16,6 +19,9 @@ const createCarbonRecord = Joi.object({
     transportDistances: Joi.object().pattern(Joi.string(), Joi.number().min(0)),
     waste: Joi.number().min(0).default(0),
 });
+
+
+//  updating an existing carbon footprint record with Validation
 
 const updateCarbonRecord = Joi.object({
     month: Joi.string(),
