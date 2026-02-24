@@ -8,9 +8,8 @@ const createAudit = Joi.object({
     peakUsage: Joi.string().valid('Day', 'Night').required(),
     appliances: Joi.array().items(
         Joi.object({
-            name: Joi.string().required(),
-            power: Joi.number().positive().required(),
-            hours: Joi.number().min(0).max(24).required(),
+            applianceId: Joi.string().hex().length(24).required(),
+            usageHours: Joi.number().min(0).max(24).required(),
         })
     ).min(1).required(),
     householdSize: Joi.number().min(1).default(1),
@@ -22,9 +21,8 @@ const updateAudit = Joi.object({
     peakUsage: Joi.string().valid('Day', 'Night'),
     appliances: Joi.array().items(
         Joi.object({
-            name: Joi.string(),
-            power: Joi.number().positive(),
-            hours: Joi.number().min(0).max(24),
+            applianceId: Joi.string().hex().length(24),
+            usageHours: Joi.number().min(0).max(24),
         })
     ),
     householdSize: Joi.number().min(1),
@@ -33,8 +31,8 @@ const updateAudit = Joi.object({
 const simulateAudit = Joi.object({
     changes: Joi.array().items(
         Joi.object({
-            parameter: Joi.string().valid('hours', 'power', 'count').required(),
-            applianceName: Joi.string().required(),
+            parameter: Joi.string().valid('usageHours', 'powerConsumption', 'count').required(),
+            applianceId: Joi.string().hex().length(24).required(),
             value: Joi.number().required(),
         })
     ).required()

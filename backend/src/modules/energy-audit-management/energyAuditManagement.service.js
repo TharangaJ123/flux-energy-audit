@@ -1,33 +1,46 @@
 const EnergyAudit = require('./energyAuditManagement.model');
+const Appliance = require('../appliance-management/appliancemanagement.model');
 const geminiService = require('../../services/geminiService');
 const { runInTransaction } = require('../../util/transaction');
 
 exports.createAudit = async (userId, data) => {
     return await runInTransaction(async (session) => {
-        // 1. Prepare data for AI analysis
+        // 1. Fetch appliance details for AI analysis
+        const populatedAppliances = await Promise.all(
+            data.appliances.map(async (app) => {
+                const appliance = await Appliance.findById(app.applianceId).session(session);
+                if (!appliance) throw new Error(`Appliance not found: ${app.applianceId}`);
+                return {
+                    name: appliance.name,
+                    powerConsumption: appliance.powerConsumption,
+                    usageHours: app.usageHours,
+                };
+            })
+        );
+
+        // 2. Prepare data for AI analysis
         const aiInput = {
             month: data.month,
             totalUnits: data.totalUnits,
-            householdSize: data.householdSize, // Ensure this is passed or defaulted
-            appliances: data.appliances,
+            householdSize: data.householdSize,
+            appliances: populatedAppliances,
             previousMonthUnits: data.previousMonthUnits,
         };
 
-        // 2. Get AI Insights
+        // 3. Get AI Insights
         const aiResult = await geminiService.generateAuditAnalysis(aiInput);
 
-        // 3. Create Audit Record
-        const newAudit = await EnergyAudit.create({
+        // 4. Create Audit Record
+        const newAudit = await EnergyAudit.create([{
             user: userId,
             ...data,
             aiSummary: aiResult.ai_summary,
             aiRecommendations: aiResult.ai_recommendations,
             efficiencyScore: aiResult.efficiency_score,
             badges: aiResult.badges,
-        });
+        }], { session });
 
-        await newAudit.save({ session });
-        return newAudit;
+        return newAudit[0];
     });
 };
 
@@ -54,12 +67,25 @@ exports.updateAudit = async (auditId, userId, updateData) => {
         Object.assign(audit, updateData);
 
         if (needsReAnalysis) {
+            // Fetch appliance details for AI analysis
+            const populatedAppliances = await Promise.all(
+                audit.appliances.map(async (app) => {
+                    const appliance = await Appliance.findById(app.applianceId).session(session);
+                    if (!appliance) throw new Error(`Appliance not found: ${app.applianceId}`);
+                    return {
+                        name: appliance.name,
+                        powerConsumption: appliance.powerConsumption,
+                        usageHours: app.usageHours,
+                    };
+                })
+            );
+
             const aiInput = {
                 month: audit.month,
                 totalUnits: audit.totalUnits,
                 householdSize: updateData.householdSize || 4, // simplistic default if missing from update
-                appliances: audit.appliances,
-                previousMonthUnits: 0, // In update flow, might need to fetch prev month dynamically if strictly required
+                appliances: populatedAppliances,
+                previousMonthUnits: 0,
             };
 
             try {
@@ -70,7 +96,6 @@ exports.updateAudit = async (auditId, userId, updateData) => {
                 audit.badges = aiResult.badges;
             } catch (e) {
                 console.error("AI Analysis failed during update, preserving old data or setting error flag", e);
-                // Optionally handle partial failure
             }
         }
 
@@ -91,12 +116,34 @@ exports.simulateChange = async (auditId, userId, changes) => {
     const audit = await EnergyAudit.findOne({ _id: auditId, user: userId });
     if (!audit) throw new Error('Audit not found');
 
+    const populatedAppliances = await Promise.all(
+        audit.appliances.map(async (app) => {
+            const appliance = await Appliance.findById(app.applianceId);
+            return {
+                name: appliance?.name || 'Unknown',
+                powerConsumption: appliance?.powerConsumption || 0,
+                usageHours: app.usageHours,
+            };
+        })
+    );
+
+    // Resolve applianceId in 'changes' to name for Gemini analysis
+    const mappedChanges = await Promise.all(
+        changes.map(async (change) => {
+            const appliance = await Appliance.findById(change.applianceId);
+            return {
+                ...change,
+                applianceName: appliance?.name || 'Unknown',
+            };
+        })
+    );
+
     const simulationResult = await geminiService.generateSimulation(
         {
             totalUnits: audit.totalUnits,
-            appliances: audit.appliances,
+            appliances: populatedAppliances,
         },
-        changes
+        mappedChanges
     );
 
     return simulationResult;
@@ -106,10 +153,21 @@ exports.chatWithAudit = async (auditId, userId, message, history) => {
     const audit = await EnergyAudit.findOne({ _id: auditId, user: userId });
     if (!audit) throw new Error('Audit not found');
 
+    const populatedAppliances = await Promise.all(
+        audit.appliances.map(async (app) => {
+            const appliance = await Appliance.findById(app.applianceId);
+            return {
+                name: appliance?.name || 'Unknown',
+                powerConsumption: appliance?.powerConsumption || 0,
+                usageHours: app.usageHours,
+            };
+        })
+    );
+
     const context = {
         totalUnits: audit.totalUnits,
         month: audit.month,
-        appliances: audit.appliances,
+        appliances: populatedAppliances,
         aiSummary: audit.aiSummary,
         recommendations: audit.aiRecommendations
     };

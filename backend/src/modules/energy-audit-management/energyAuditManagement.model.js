@@ -1,11 +1,5 @@
 const mongoose = require('mongoose');
 
-const applianceSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    power: { type: Number, required: true }, // in Watts
-    hours: { type: Number, required: true }, // Daily usage
-});
-
 const energyAuditSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -13,7 +7,7 @@ const energyAuditSchema = new mongoose.Schema({
         required: true,
     },
     month: {
-        type: String, // Format: "YYYY-MM"
+        type: String,
         required: true,
     },
     totalUnits: {
@@ -25,7 +19,14 @@ const energyAuditSchema = new mongoose.Schema({
         enum: ['Day', 'Night'],
         required: true,
     },
-    appliances: [applianceSchema],
+    appliances: [{
+        applianceId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Appliance',
+            required: true
+        },
+        usageHours: { type: Number, required: true }
+    }],
     aiSummary: {
         type: String,
     },
@@ -36,16 +37,8 @@ const energyAuditSchema = new mongoose.Schema({
         max: 100,
     },
     badges: [String],
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now,
-    },
 }, {
-    timestamp: true
+    timestamps: true
 });
 
 module.exports = mongoose.model('EnergyAudit', energyAuditSchema);

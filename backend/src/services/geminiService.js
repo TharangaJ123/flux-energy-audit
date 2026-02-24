@@ -45,7 +45,7 @@ exports.generateSimulation = async (baseData, changes) => {
       - Total Units: ${baseData.totalUnits}
       - Appliances: ${JSON.stringify(baseData.appliances)}
   
-      Simulate the following changes:
+      Simulate the following changes (parameter can be 'usageHours', 'powerConsumption', or 'count'):
       ${JSON.stringify(changes)}
   
       Calculate the impact and provide a JSON response with:
