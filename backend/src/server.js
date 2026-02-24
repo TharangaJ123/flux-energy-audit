@@ -25,10 +25,12 @@ app.use(cors());
 const userRoutes = require('./modules/user-management/userManagement.route');
 const energyAuditRoutes = require('./modules/energy-audit-management/energyAuditManagement.route');
 const carbonRoutes = require('./modules/carbon-footprint-tracker/carbonFootprintTracker.route');
+const applianceRoutes = require('./modules/appliance-management/appliancemanagement.route');
 
 // Define Routes
 app.use('/api/users', userRoutes);
 app.use('/api/energy-audits', energyAuditRoutes);
+app.use('/api/appliances', applianceRoutes);
 app.use('/api/carbon', carbonRoutes);
 
 const swaggerUi = require('swagger-ui-express');
