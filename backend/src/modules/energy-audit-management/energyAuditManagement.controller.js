@@ -62,9 +62,8 @@ exports.deleteAudit = async (req, res) => {
 
 exports.simulateChange = async (req, res) => {
     try {
-        // Simple validation for simulation body
-        // const { error } = simulateAudit.validate(req.body);
-        // if (error) return res.status(400).json({ error: error.details[0].message });
+        const { error } = simulateAudit.validate(req.body);
+        if (error) return res.status(400).json({ error: error.details[0].message });
 
         const result = await energyAuditService.simulateChange(req.params.id, req.user.id, req.body.changes);
         res.json(result);
