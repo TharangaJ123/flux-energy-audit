@@ -1,26 +1,30 @@
 const mongoose = require('mongoose');
 
-// Electricity cost data model.
+// Cost goal data model.
 
-const costSchema = new mongoose.Schema(
+const costGoalSchema = new mongoose.Schema(
     {
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true,
         },
-        month: {
-            type: Number,
+        type: {
+            type: String,
             required: true,
-            min: 1,
-            max: 12,
+            enum: ['monthly', 'yearly'],
         },
         year: {
             type: Number,
             required: true,
             min: 1900,
         },
-        electricityCost: {
+        month: {
+            type: Number,
+            min: 1,
+            max: 12,
+        },
+        goalAmount: {
             type: Number,
             required: true,
             min: 0,
@@ -35,6 +39,6 @@ const costSchema = new mongoose.Schema(
     }
 );
 
-costSchema.index({ user: 1, month: 1, year: 1 }, { unique: true });
+costGoalSchema.index({ user: 1, type: 1, year: 1, month: 1 }, { unique: true });
 
-module.exports = mongoose.model('ElectricityCost', costSchema);
+module.exports = mongoose.model('CostGoal', costGoalSchema);
