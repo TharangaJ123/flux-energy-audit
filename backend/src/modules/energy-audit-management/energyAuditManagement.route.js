@@ -44,11 +44,9 @@ router.use(auth.protect);
  *                 items:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     applianceId:
  *                       type: string
- *                     power:
- *                       type: number
- *                     hours:
+ *                     usageHours:
  *                       type: number
  *     responses:
  *       201:
@@ -131,6 +129,12 @@ router.get('/:id', energyAuditController.getAuditById);
  *                 type: array
  *                 items:
  *                   type: object
+ *                   properties:
+ *                     applianceId:
+ *                       type: string
+ *                     usageHours:
+ *                       type: number
+
  *     responses:
  *       200:
  *         description: Audit updated successfully
@@ -199,8 +203,8 @@ router.delete('/:id', energyAuditController.deleteAudit);
  *                   properties:
  *                     parameter:
  *                       type: string
- *                       enum: [hours, power, count]
- *                     applianceName:
+ *                       enum: [usageHours, powerConsumption, count]
+ *                     applianceId:
  *                       type: string
  *                     value:
  *                       type: number
