@@ -13,6 +13,8 @@ const EMISSION_FACTORS = {
     waste: 0.21           // kg CO2 per kg of waste
 };
 
+//  Calculate total CO2 emissions based on user data 
+
 const calculateCO2 = (data) => {
     let total = 0;
 
