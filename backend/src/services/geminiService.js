@@ -1,3 +1,6 @@
+/**
+ * Gemini Service - Handles AI interactions using Google Gemini API
+ */
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const dotenv = require('dotenv');
 
@@ -6,6 +9,7 @@ dotenv.config();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
+// Generates an AI analysis summary and recommendations for an energy audit
 exports.generateAuditAnalysis = async (data) => {
     const prompt = `
     You are an energy audit assistant.
@@ -38,6 +42,7 @@ exports.generateAuditAnalysis = async (data) => {
     }
 };
 
+// Simulates the impact of energy usage changes based on user input
 exports.generateSimulation = async (baseData, changes) => {
     const prompt = `
       You are an energy simulator.
@@ -70,6 +75,7 @@ exports.generateSimulation = async (baseData, changes) => {
     }
 };
 
+// Generates a helpful response to user queries within an energy audit context
 exports.generateChatResponse = async (history, message, context) => {
     const chat = model.startChat({
         history: history.map(msg => ({
