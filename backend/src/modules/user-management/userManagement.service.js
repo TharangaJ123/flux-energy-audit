@@ -1,14 +1,19 @@
+/**
+ * User Service - Logic for user operations
+ */
 const User = require('./userManagement.model');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { runInTransaction } = require('../../util/transaction');
 
+// Generate JWT token
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '30d',
     });
 };
 
+// Register a user with hashed password
 const registerUser = async (userData) => {
     return await runInTransaction(async (session) => {
         const { name, email, password } = userData;
@@ -44,6 +49,7 @@ const registerUser = async (userData) => {
     });
 };
 
+// Login user and return user data with token
 const loginUser = async (email, password) => {
     const user = await User.findOne({ email });
 
@@ -60,6 +66,7 @@ const loginUser = async (email, password) => {
     }
 };
 
+// Get profile details of the user
 const getUserProfile = async (user) => {
     if (user) {
         return {
@@ -73,6 +80,7 @@ const getUserProfile = async (user) => {
     }
 };
 
+// Update user profile information
 const updateUserProfile = async (user, updateData) => {
     return await runInTransaction(async (session) => {
         const foundUser = await User.findById(user._id).session(session);
@@ -101,6 +109,7 @@ const updateUserProfile = async (user, updateData) => {
     });
 };
 
+// Delete user profile
 const deleteUserProfile = async (userId) => {
     return await runInTransaction(async (session) => {
         const user = await User.findById(userId).session(session);

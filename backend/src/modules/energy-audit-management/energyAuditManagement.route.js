@@ -1,23 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const energyAuditController = require('./energyAuditManagement.controller');
-const auth = require('../../middleware/auth'); // Assuming auth middleware exists
+const auth = require('../../middleware/auth');
 
-// Apply auth middleware to all routes
+// All audit management routes require a valid authentication token
 router.use(auth.protect);
 
 /**
  * @swagger
  * tags:
  *   name: Energy Audits
- *   description: Energy audit management and AI analysis
+ *   description: Energy audit management and AI-guided efficiency tools
  */
+
+// --- Standard CRUD Audit Routes ---
 
 /**
  * @swagger
  * /api/energy-audits:
  *   post:
- *     summary: Create a new energy audit
+ *     summary: Create a new energy audit and get AI analysis
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
@@ -44,15 +46,13 @@ router.use(auth.protect);
  *                 items:
  *                   type: object
  *                   properties:
- *                     name:
+ *                     applianceId:
  *                       type: string
- *                     power:
- *                       type: number
- *                     hours:
+ *                     usageHours:
  *                       type: number
  *     responses:
  *       201:
- *         description: Audit created successfully
+ *         description: Audit created successfully with AI insights
  *       400:
  *         description: Validation error
  *       500:
@@ -64,13 +64,13 @@ router.post('/', energyAuditController.createAudit);
  * @swagger
  * /api/energy-audits:
  *   get:
- *     summary: Get all energy audits for the user
+ *     summary: Get all energy audits history for the user
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of audits
+ *         description: List of user audits
  *       500:
  *         description: Server error
  */
@@ -80,7 +80,7 @@ router.get('/', energyAuditController.getAudits);
  * @swagger
  * /api/energy-audits/{id}:
  *   get:
- *     summary: Get audit by ID
+ *     summary: Get specific audit details and AI results
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
@@ -105,7 +105,7 @@ router.get('/:id', energyAuditController.getAuditById);
  * @swagger
  * /api/energy-audits/{id}:
  *   put:
- *     summary: Update an energy audit
+ *     summary: Update an energy audit (triggers re-analysis if units/appliances change)
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
@@ -131,9 +131,15 @@ router.get('/:id', energyAuditController.getAuditById);
  *                 type: array
  *                 items:
  *                   type: object
+ *                   properties:
+ *                     applianceId:
+ *                       type: string
+ *                     usageHours:
+ *                       type: number
+
  *     responses:
  *       200:
- *         description: Audit updated successfully
+ *         description: Audit updated and re-analyzed
  *       404:
  *         description: Audit not found
  *       500:
@@ -145,7 +151,7 @@ router.put('/:id', energyAuditController.updateAudit);
  * @swagger
  * /api/energy-audits/{id}:
  *   delete:
- *     summary: Delete an energy audit
+ *     summary: Delete an energy audit record
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
@@ -166,13 +172,13 @@ router.put('/:id', energyAuditController.updateAudit);
  */
 router.delete('/:id', energyAuditController.deleteAudit);
 
-// AI Features
+// --- AI-Powered Features ---
 
 /**
  * @swagger
  * /api/energy-audits/{id}/simulate:
  *   post:
- *     summary: Simulate changes to an audit
+ *     summary: Predict impact of behavior changes on bill/environment
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
@@ -199,14 +205,14 @@ router.delete('/:id', energyAuditController.deleteAudit);
  *                   properties:
  *                     parameter:
  *                       type: string
- *                       enum: [hours, power, count]
- *                     applianceName:
+ *                       enum: [usageHours, powerConsumption, count]
+ *                     applianceId:
  *                       type: string
  *                     value:
  *                       type: number
  *     responses:
  *       200:
- *         description: Simulation results
+ *         description: Simulation results and AI advice
  *       404:
  *         description: Audit not found
  *       500:
@@ -218,7 +224,7 @@ router.post('/:id/simulate', energyAuditController.simulateChange);
  * @swagger
  * /api/energy-audits/{id}/chat:
  *   post:
- *     summary: Chat with the audit context
+ *     summary: Chat with the AI using audit data as background knowledge
  *     tags: [Energy Audits]
  *     security:
  *       - bearerAuth: []
@@ -252,7 +258,7 @@ router.post('/:id/simulate', energyAuditController.simulateChange);
  *                       type: string
  *     responses:
  *       200:
- *         description: Chat response
+ *         description: AI-generated response based on context
  *       404:
  *         description: Audit not found
  *       500:

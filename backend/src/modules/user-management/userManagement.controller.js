@@ -1,6 +1,10 @@
+/**
+ * User Controller - Handles user-related HTTP requests
+ */
 const userService = require('./userManagement.service');
 const { registerUser, loginUser, updateUser } = require('./userManagement.validation');
 
+// Register a new user
 const register = async (req, res) => {
     try {
         const { error } = registerUser.validate(req.body);
@@ -18,6 +22,7 @@ const register = async (req, res) => {
     }
 };
 
+// Login user
 const login = async (req, res) => {
     try {
         const { error } = loginUser.validate(req.body);
@@ -36,6 +41,7 @@ const login = async (req, res) => {
     }
 };
 
+// Get current user profile
 const getProfile = async (req, res) => {
     try {
         const user = await userService.getUserProfile(req.user);
@@ -45,6 +51,7 @@ const getProfile = async (req, res) => {
     }
 };
 
+// Update current user profile
 const updateProfile = async (req, res) => {
     try {
         const { error } = updateUser.validate(req.body);
@@ -59,6 +66,7 @@ const updateProfile = async (req, res) => {
     }
 };
 
+// Delete current user profile
 const deleteProfile = async (req, res) => {
     try {
         const result = await userService.deleteUserProfile(req.user._id);
