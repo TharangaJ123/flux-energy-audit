@@ -1,3 +1,6 @@
+/**
+ * User Routes - Defines API endpoints for user management
+ */
 const express = require('express');
 const router = express.Router();
 const userController = require('./userManagement.controller');

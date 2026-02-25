@@ -1,52 +1,69 @@
 const EnergyAudit = require('./energyAuditManagement.model');
+const Appliance = require('../appliance-management/appliancemanagement.model');
 const geminiService = require('../../services/geminiService');
 const { runInTransaction } = require('../../util/transaction');
 
+// Creates a new audit and performs AI analysis based on the consumed units and appliances
 exports.createAudit = async (userId, data) => {
     return await runInTransaction(async (session) => {
-        // 1. Prepare data for AI analysis
+        // 1. Fetch full appliance details (names and power) using IDs provided in the request
+        const populatedAppliances = await Promise.all(
+            data.appliances.map(async (app) => {
+                const appliance = await Appliance.findById(app.applianceId).session(session);
+                if (!appliance) throw new Error(`Appliance not found: ${app.applianceId}`);
+                return {
+                    name: appliance.name,
+                    powerConsumption: appliance.powerConsumption,
+                    usageHours: app.usageHours,
+                };
+            })
+        );
+
+        // 2. Format inputs to be digestible by the AI model
         const aiInput = {
             month: data.month,
             totalUnits: data.totalUnits,
-            householdSize: data.householdSize, // Ensure this is passed or defaulted
-            appliances: data.appliances,
+            householdSize: data.householdSize,
+            appliances: populatedAppliances,
             previousMonthUnits: data.previousMonthUnits,
         };
 
-        // 2. Get AI Insights
+        // 3. Request insights from Gemini AI (summary, recommendations, score, badges)
         const aiResult = await geminiService.generateAuditAnalysis(aiInput);
 
-        // 3. Create Audit Record
-        const newAudit = await EnergyAudit.create({
+        // 4. Create the final audit record including AI insights
+        const newAudit = await EnergyAudit.create([{
             user: userId,
             ...data,
             aiSummary: aiResult.ai_summary,
             aiRecommendations: aiResult.ai_recommendations,
             efficiencyScore: aiResult.efficiency_score,
             badges: aiResult.badges,
-        });
+        }], { session });
 
-        await newAudit.save({ session });
-        return newAudit;
+        return newAudit[0];
     });
 };
 
+// Retrieve user-specific audits sorted by most recent month
 exports.getAudits = async (userId) => {
     return await EnergyAudit.find({ user: userId }).sort({ month: -1 });
 };
 
+// Fetch a specific audit, ensuring the user owns the record
 exports.getAuditById = async (auditId, userId) => {
     const audit = await EnergyAudit.findOne({ _id: auditId, user: userId });
     if (!audit) throw new Error('Audit not found');
     return audit;
 };
 
+// Update an audit and re-run AI analysis if performance-impacting fields changed
 exports.updateAudit = async (auditId, userId, updateData) => {
     return await runInTransaction(async (session) => {
         let audit = await EnergyAudit.findOne({ _id: auditId, user: userId }).session(session);
         if (!audit) throw new Error('Audit not found');
 
-        // Verify if critical fields changed to re-trigger AI
+        // Check if units or appliance lists were modified to decide on re-analysis
         const needsReAnalysis =
             updateData.totalUnits !== undefined ||
             updateData.appliances !== undefined;
@@ -54,12 +71,25 @@ exports.updateAudit = async (auditId, userId, updateData) => {
         Object.assign(audit, updateData);
 
         if (needsReAnalysis) {
+            // Populate appliances again for the AI context
+            const populatedAppliances = await Promise.all(
+                audit.appliances.map(async (app) => {
+                    const appliance = await Appliance.findById(app.applianceId).session(session);
+                    if (!appliance) throw new Error(`Appliance not found: ${app.applianceId}`);
+                    return {
+                        name: appliance.name,
+                        powerConsumption: appliance.powerConsumption,
+                        usageHours: app.usageHours,
+                    };
+                })
+            );
+
             const aiInput = {
                 month: audit.month,
                 totalUnits: audit.totalUnits,
-                householdSize: updateData.householdSize || 4, // simplistic default if missing from update
-                appliances: audit.appliances,
-                previousMonthUnits: 0, // In update flow, might need to fetch prev month dynamically if strictly required
+                householdSize: updateData.householdSize || 4,
+                appliances: populatedAppliances,
+                previousMonthUnits: 0,
             };
 
             try {
@@ -69,8 +99,7 @@ exports.updateAudit = async (auditId, userId, updateData) => {
                 audit.efficiencyScore = aiResult.efficiency_score;
                 audit.badges = aiResult.badges;
             } catch (e) {
-                console.error("AI Analysis failed during update, preserving old data or setting error flag", e);
-                // Optionally handle partial failure
+                console.error("AI Analysis failed during update, preserving old data", e);
             }
         }
 
@@ -79,6 +108,7 @@ exports.updateAudit = async (auditId, userId, updateData) => {
     });
 };
 
+// Deletes a user's audit record
 exports.deleteAudit = async (auditId, userId) => {
     return await runInTransaction(async (session) => {
         const audit = await EnergyAudit.findOneAndDelete({ _id: auditId, user: userId }).session(session);
@@ -87,29 +117,65 @@ exports.deleteAudit = async (auditId, userId) => {
     });
 };
 
+// Simulates usage changes and predicts unit/cost savings using AI
 exports.simulateChange = async (auditId, userId, changes) => {
     const audit = await EnergyAudit.findOne({ _id: auditId, user: userId });
     if (!audit) throw new Error('Audit not found');
 
+    // Fetch appliance metadata to turn IDs into names/power for simulation
+    const populatedAppliances = await Promise.all(
+        audit.appliances.map(async (app) => {
+            const appliance = await Appliance.findById(app.applianceId);
+            return {
+                name: appliance?.name || 'Unknown',
+                powerConsumption: appliance?.powerConsumption || 0,
+                usageHours: app.usageHours,
+            };
+        })
+    );
+
+    // Turn change IDs into names so Gemini knows what is being modified
+    const mappedChanges = await Promise.all(
+        changes.map(async (change) => {
+            const appliance = await Appliance.findById(change.applianceId);
+            return {
+                ...change,
+                applianceName: appliance?.name || 'Unknown',
+            };
+        })
+    );
+
     const simulationResult = await geminiService.generateSimulation(
         {
             totalUnits: audit.totalUnits,
-            appliances: audit.appliances,
+            appliances: populatedAppliances,
         },
-        changes
+        mappedChanges
     );
 
     return simulationResult;
 };
 
+// Allows interactive Q&A about a specific audit using the audit's results as context
 exports.chatWithAudit = async (auditId, userId, message, history) => {
     const audit = await EnergyAudit.findOne({ _id: auditId, user: userId });
     if (!audit) throw new Error('Audit not found');
 
+    const populatedAppliances = await Promise.all(
+        audit.appliances.map(async (app) => {
+            const appliance = await Appliance.findById(app.applianceId);
+            return {
+                name: appliance?.name || 'Unknown',
+                powerConsumption: appliance?.powerConsumption || 0,
+                usageHours: app.usageHours,
+            };
+        })
+    );
+
     const context = {
         totalUnits: audit.totalUnits,
         month: audit.month,
-        appliances: audit.appliances,
+        appliances: populatedAppliances,
         aiSummary: audit.aiSummary,
         recommendations: audit.aiRecommendations
     };

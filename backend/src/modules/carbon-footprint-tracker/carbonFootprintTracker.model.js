@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+/**
+ * Mongoose schema for Carbon Footprint records.
+ * Stores monthly data on electricity, gas, transport, and waste to calculate CO2 emissions.
+ */
 const carbonFootprintSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,

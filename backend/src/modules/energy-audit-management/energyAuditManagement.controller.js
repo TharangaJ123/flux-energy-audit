@@ -1,6 +1,7 @@
 const energyAuditService = require('./energyAuditManagement.service');
 const { createAudit, updateAudit, simulateAudit } = require('./energyAuditManagement.validation');
 
+// Handle creating a new energy audit with AI analysis
 exports.createAudit = async (req, res) => {
     try {
         const { error } = createAudit.validate(req.body);
@@ -14,6 +15,7 @@ exports.createAudit = async (req, res) => {
     }
 };
 
+// Retrieve all energy audits for the authenticated user
 exports.getAudits = async (req, res) => {
     try {
         const audits = await energyAuditService.getAudits(req.user.id);
@@ -24,6 +26,7 @@ exports.getAudits = async (req, res) => {
     }
 };
 
+// Retrieve a single audit by its unique ID
 exports.getAuditById = async (req, res) => {
     try {
         const audit = await energyAuditService.getAuditById(req.params.id, req.user.id);
@@ -35,6 +38,7 @@ exports.getAuditById = async (req, res) => {
     }
 };
 
+// Handle updating existing audits and re-triggering AI logic if needed
 exports.updateAudit = async (req, res) => {
     try {
         const { error } = updateAudit.validate(req.body);
@@ -49,6 +53,7 @@ exports.updateAudit = async (req, res) => {
     }
 };
 
+// Remove an audit record from the system
 exports.deleteAudit = async (req, res) => {
     try {
         await energyAuditService.deleteAudit(req.params.id, req.user.id);
@@ -60,11 +65,11 @@ exports.deleteAudit = async (req, res) => {
     }
 };
 
+// Process usage simulations using the AI engine
 exports.simulateChange = async (req, res) => {
     try {
-        // Simple validation for simulation body
-        // const { error } = simulateAudit.validate(req.body);
-        // if (error) return res.status(400).json({ error: error.details[0].message });
+        const { error } = simulateAudit.validate(req.body);
+        if (error) return res.status(400).json({ error: error.details[0].message });
 
         const result = await energyAuditService.simulateChange(req.params.id, req.user.id, req.body.changes);
         res.json(result);
@@ -75,6 +80,7 @@ exports.simulateChange = async (req, res) => {
     }
 };
 
+// Handle interactive chat with AI based on audit results context
 exports.chatWithAudit = async (req, res) => {
     try {
         const { message, history } = req.body;
