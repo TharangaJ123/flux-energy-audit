@@ -1,6 +1,9 @@
 const costService = require('./costManagement.service');
 const { createCost, updateCost } = require('./costManagement.validation');
 
+// Controller handlers for electricity costs.
+
+// Create a monthly electricity cost record.
 const create = async (req, res) => {
     try {
         const { error } = createCost.validate(req.body);
@@ -18,6 +21,7 @@ const create = async (req, res) => {
     }
 };
 
+// List all electricity cost records for the authenticated user.
 const list = async (req, res) => {
     try {
         const costs = await costService.getCosts(req.user._id);
@@ -27,6 +31,7 @@ const list = async (req, res) => {
     }
 };
 
+// Get one electricity cost record by id.
 const getById = async (req, res) => {
     try {
         const cost = await costService.getCostById(req.user._id, req.params.id);
@@ -36,6 +41,7 @@ const getById = async (req, res) => {
     }
 };
 
+// Update an existing electricity cost record.
 const update = async (req, res) => {
     try {
         const { error } = updateCost.validate(req.body);
@@ -56,6 +62,7 @@ const update = async (req, res) => {
     }
 };
 
+// Delete an electricity cost record.
 const remove = async (req, res) => {
     try {
         const result = await costService.deleteCost(req.user._id, req.params.id);

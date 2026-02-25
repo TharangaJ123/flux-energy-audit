@@ -1,6 +1,9 @@
 const ElectricityCost = require('./costManagement.model');
 const { runInTransaction } = require('../../util/transaction');
 
+// Electricity cost business logic.
+
+// Create a new electricity cost entry with duplicate-period protection.
 const createCost = async (userId, costData) => {
     return await runInTransaction(async (session) => {
         const { month, year } = costData;
@@ -23,10 +26,12 @@ const createCost = async (userId, costData) => {
     });
 };
 
+// Retrieve all electricity costs for a user.
 const getCosts = async (userId) => {
     return await ElectricityCost.find({ user: userId }).sort({ year: -1, month: -1 });
 };
 
+// Retrieve a single electricity cost by id.
 const getCostById = async (userId, costId) => {
     const cost = await ElectricityCost.findOne({ _id: costId, user: userId });
     if (!cost) {
@@ -35,6 +40,7 @@ const getCostById = async (userId, costId) => {
     return cost;
 };
 
+// Update a cost entry while preventing month-year duplicates.
 const updateCost = async (userId, costId, updateData) => {
     return await runInTransaction(async (session) => {
         const cost = await ElectricityCost.findOne({ _id: costId, user: userId }).session(session);
@@ -69,6 +75,7 @@ const updateCost = async (userId, costId, updateData) => {
     });
 };
 
+// Delete one electricity cost entry by id.
 const deleteCost = async (userId, costId) => {
     return await runInTransaction(async (session) => {
         const cost = await ElectricityCost.findOne({ _id: costId, user: userId }).session(session);
