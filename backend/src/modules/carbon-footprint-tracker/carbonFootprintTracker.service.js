@@ -1,5 +1,7 @@
 const CarbonFootprint = require('./carbonFootprintTracker.model');
 const { runInTransaction } = require('../../util/transaction');
+const { calculateCO2WithClimatiq } = require('./carbonApi.service');
+
 
 // Updated emission factors based on frontend implementation
 const EMISSION_FACTORS = {
@@ -13,7 +15,19 @@ const EMISSION_FACTORS = {
     waste: 0.21           // kg CO2 per kg of waste
 };
 
-const calculateCO2 = (data) => {
+
+//  Calculate CO2 emissions - Support legacy calculation and Climatiq API
+const calculateCO2 = async (data) => {
+
+    try {
+        // Use Climatiq 3rd Party API
+        const result = await calculateCO2WithClimatiq(data);
+        if (result) return result;
+    } catch (error) {
+        console.warn('Climatiq API failed, falling back to local calculation');
+    }
+
+    // New fallback implementation (original logic)
     let total = 0;
 
     // Electricity
@@ -22,7 +36,7 @@ const calculateCO2 = (data) => {
     // Gas
     const gasSelections = data.gasSelections || [];
     const gasAmounts = data.gasAmounts || {};
-    gasSelections.forEach(type => {
+    gasSelections.forEach((type) => {
         const amount = parseFloat(gasAmounts[type]) || 0;
         if (type === 'natural') total += amount * EMISSION_FACTORS.naturalGas;
         else if (type === 'lpg') total += amount * EMISSION_FACTORS.lpg;
@@ -31,7 +45,7 @@ const calculateCO2 = (data) => {
     // Transport
     const transportSelections = data.transportSelections || [];
     const transportDistances = data.transportDistances || {};
-    transportSelections.forEach(type => {
+    transportSelections.forEach((type) => {
         const distance = parseFloat(transportDistances[type]) || 0;
         if (EMISSION_FACTORS[type + 'Car']) {
             total += distance * EMISSION_FACTORS[type + 'Car'];
@@ -44,15 +58,17 @@ const calculateCO2 = (data) => {
     total += (parseFloat(data.waste) || 0) * EMISSION_FACTORS.waste;
 
     let status = 'Low';
-    if (total > 150) status = 'High'; // Adjusted based on frontend recommendations
+    if (total > 150) status = 'High';
     else if (total > 80) status = 'Moderate';
 
     return { co2: total, status };
 };
 
+
 const createRecord = async (user, data) => {
     return await runInTransaction(async (session) => {
-        const { co2, status } = calculateCO2(data);
+        const { co2, status } = await calculateCO2(data);
+
 
         const record = new CarbonFootprint({
             user: user._id,
@@ -105,7 +121,8 @@ const updateRecord = async (id, user, data) => {
             waste: data.waste !== undefined ? data.waste : record.waste,
         };
 
-        const { co2, status } = calculateCO2(mergedData);
+        const { co2, status } = await calculateCO2(mergedData);
+
 
         record.month = data.month || record.month;
         record.year = data.year || record.year;
