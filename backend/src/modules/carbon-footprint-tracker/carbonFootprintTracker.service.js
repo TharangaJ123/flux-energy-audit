@@ -150,7 +150,7 @@ const deleteRecord = async (id, user) => {
             throw new Error('Record not found');
         }
         await record.deleteOne({ session });
-        return { message: 'Record removed' };
+        return { message: 'Record removed successfully' };
     });
 };
 
