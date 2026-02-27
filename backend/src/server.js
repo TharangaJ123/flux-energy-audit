@@ -7,8 +7,6 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = require('./config/db');
-// const { swaggerUi, specs } = require('./config/swagger');
-
 
 // Load env vars
 dotenv.config();
@@ -37,8 +35,6 @@ app.use('/api/carbon', carbonRoutes);
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
-
-
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
