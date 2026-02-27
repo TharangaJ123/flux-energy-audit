@@ -7,8 +7,6 @@ const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = require('./config/db');
-// const { swaggerUi, specs } = require('./config/swagger');
-
 
 // Load env vars
 dotenv.config();
@@ -24,17 +22,19 @@ app.use(cors());
 
 const userRoutes = require('./modules/user-management/userManagement.route');
 const energyAuditRoutes = require('./modules/energy-audit-management/energyAuditManagement.route');
+const costRoutes = require('./modules/cost-management/costManagement.route');
 const carbonRoutes = require('./modules/carbon-footprint-tracker/carbonFootprintTracker.route');
+const applianceRoutes = require('./modules/appliance-management/appliancemanagement.route');
 
 // Define Routes
 app.use('/api/users', userRoutes);
 app.use('/api/energy-audits', energyAuditRoutes);
+app.use('/api/costs', costRoutes);
+app.use('/api/appliances', applianceRoutes);
 app.use('/api/carbon', carbonRoutes);
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
-
-
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

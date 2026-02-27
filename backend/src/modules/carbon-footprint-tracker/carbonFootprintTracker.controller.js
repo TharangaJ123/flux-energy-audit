@@ -1,6 +1,7 @@
 const carbonService = require('./carbonFootprintTracker.service');
 const { createCarbonRecord, updateCarbonRecord } = require('./carbonFootprintTracker.validation');
 
+// Get all carbon footprint records for the logged-in user.
 const getRecords = async (req, res) => {
     try {
         const records = await carbonService.getRecords(req.user);
@@ -10,6 +11,7 @@ const getRecords = async (req, res) => {
     }
 };
 
+// Get a single carbon footprint record by ID.
 const getRecord = async (req, res) => {
     try {
         const record = await carbonService.getRecordById(req.params.id, req.user);
@@ -19,6 +21,7 @@ const getRecord = async (req, res) => {
     }
 };
 
+// Create a new carbon footprint record .
 const createRecord = async (req, res) => {
     try {
         const { error } = createCarbonRecord.validate(req.body);
@@ -33,6 +36,7 @@ const createRecord = async (req, res) => {
     }
 };
 
+// Update a single carbon footprint record by ID.
 const updateRecord = async (req, res) => {
     try {
         const { error } = updateCarbonRecord.validate(req.body);
@@ -47,6 +51,7 @@ const updateRecord = async (req, res) => {
     }
 };
 
+// Delete a single carbon footprint record by ID.
 const deleteRecord = async (req, res) => {
     try {
         const result = await carbonService.deleteRecord(req.params.id, req.user);

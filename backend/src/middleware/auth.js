@@ -1,6 +1,10 @@
+/**
+ * Auth Middleware - Protects routes and handles authorization
+ */
 const jwt = require('jsonwebtoken');
 const User = require('../modules/user-management/userManagement.model');
 
+// Middleware to protect routes: verifies JWT token and attaches user to request
 const protect = async (req, res, next) => {
     let token;
 
@@ -27,4 +31,19 @@ const protect = async (req, res, next) => {
     }
 };
 
-module.exports = { protect };
+/**
+ * Grant access to specific roles
+ */
+const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({
+                message: `User role '${req.user.role}' is not authorized to access this route`
+            });
+        }
+        next();
+    };
+};
+
+module.exports = { protect, authorize };
+

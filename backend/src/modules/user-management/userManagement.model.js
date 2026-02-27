@@ -1,3 +1,6 @@
+/**
+ * User Model - Defines the database schema for users
+ */
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
