@@ -1,5 +1,5 @@
 const costService = require('./costManagement.service');
-const { createCost, updateCost } = require('./costManagement.validation');
+const { createCost, updateCost, estimateCost } = require('./costManagement.validation');
 
 // Controller handlers for electricity costs.
 
@@ -75,10 +75,32 @@ const remove = async (req, res) => {
     }
 };
 
+// Estimate a tariff-based electricity bill with detailed breakdown.
+const estimate = async (req, res) => {
+    try {
+        const { error, value } = estimateCost.validate(req.body);
+        if (error) {
+            return res.status(400).json({ message: error.details[0].message });
+        }
+
+        const estimation = await costService.estimateCostByTariff(value);
+        res.status(200).json(estimation);
+    } catch (error) {
+        if (
+            error.message === 'Unsupported provider' ||
+            error.message === 'Peak and off-peak units cannot exceed total units'
+        ) {
+            return res.status(400).json({ message: error.message });
+        }
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     create,
     list,
     getById,
     update,
     remove,
+    estimate,
 };
