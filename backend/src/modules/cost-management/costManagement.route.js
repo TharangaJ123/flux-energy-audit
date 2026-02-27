@@ -73,6 +73,142 @@ router.get('/', protect, costController.list);
 
 /**
  * @swagger
+ * /api/costs/estimate:
+ *   post:
+ *     summary: Estimate electricity bill using tariff slabs and TOU rates
+ *     tags: [Costs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - units
+ *               - month
+ *               - provider
+ *             properties:
+ *               units:
+ *                 type: number
+ *                 example: 120
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *                 example: 2
+ *               year:
+ *                 type: integer
+ *                 example: 2026
+ *               provider:
+ *                 type: string
+ *                 enum: [CEB, LECO]
+ *               peakUnits:
+ *                 type: number
+ *                 example: 20
+ *               offPeakUnits:
+ *                 type: number
+ *                 example: 40
+ *     responses:
+ *       200:
+ *         description: Bill estimation with summary, breakdown and source (external/local)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 month:
+ *                   type: integer
+ *                   example: 2
+ *                 year:
+ *                   type: integer
+ *                   example: 2026
+ *                 provider:
+ *                   type: string
+ *                   enum: [CEB, LECO]
+ *                 source:
+ *                   type: string
+ *                   enum: [external, local, local_fallback]
+ *                 units:
+ *                   type: number
+ *                   example: 120
+ *                 estimatedBill:
+ *                   type: number
+ *                   example: 4932.4
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     energyCharge:
+ *                       type: number
+ *                     peakCharge:
+ *                       type: number
+ *                     offPeakCharge:
+ *                       type: number
+ *                     fixedCharge:
+ *                       type: number
+ *                     tax:
+ *                       type: number
+ *                     subTotal:
+ *                       type: number
+ *                 breakdown:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         example: slab
+ *                       label:
+ *                         type: string
+ *                         example: 1-30
+ *                       units:
+ *                         type: number
+ *                         example: 30
+ *                       ratePerUnit:
+ *                         type: number
+ *                         example: 8
+ *                       amount:
+ *                         type: number
+ *                         example: 240
+ *             example:
+ *               month: 2
+ *               year: 2026
+ *               provider: CEB
+ *               source: local
+ *               units: 120
+ *               estimatedBill: 4932.4
+ *               summary:
+ *                 energyCharge: 2100
+ *                 peakCharge: 720
+ *                 offPeakCharge: 960
+ *                 fixedCharge: 400
+ *                 tax: 752.4
+ *                 subTotal: 4180
+ *               breakdown:
+ *                 - type: slab
+ *                   label: 1-30
+ *                   units: 30
+ *                   ratePerUnit: 8
+ *                   amount: 240
+ *                 - type: tou
+ *                   label: peak
+ *                   units: 20
+ *                   ratePerUnit: 36
+ *                   amount: 720
+ *                 - type: fixed
+ *                   label: fixedCharge
+ *                   amount: 400
+ *       400:
+ *         description: Validation error or invalid units/provider
+ *       401:
+ *         description: Not authorized
+ */
+// Estimate tariff-based electricity bill.
+router.post('/estimate', protect, costController.estimate);
+
+/**
+ * @swagger
  * /api/costs/{id}:
  *   get:
  *     summary: Get a cost by id
