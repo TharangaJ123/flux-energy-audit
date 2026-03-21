@@ -1,8 +1,8 @@
 /**
  * User Controller - Handles user-related HTTP requests
  */
-const userService = require('./userManagement.service');
-const { registerUser, loginUser, updateUser } = require('./userManagement.validation');
+const userService = require('../services/userManagement.service');
+const { registerUser, loginUser, updateUser } = require('../validations/userManagement.validation');
 
 // Register a new user
 const register = async (req, res) => {

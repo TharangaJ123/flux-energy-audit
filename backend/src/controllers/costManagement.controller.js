@@ -1,5 +1,5 @@
-const costService = require('./costManagement.service');
-const { createCost, updateCost, estimateCost } = require('./costManagement.validation');
+const costService = require('../services/costManagement.service');
+const { createCost, updateCost, estimateCost } = require('../validations/costManagement.validation');
 
 // Controller handlers for electricity costs.
 

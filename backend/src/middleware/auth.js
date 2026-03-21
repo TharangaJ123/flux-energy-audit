@@ -2,7 +2,8 @@
  * Auth Middleware - Protects routes and handles authorization
  */
 const jwt = require('jsonwebtoken');
-const User = require('../modules/user-management/userManagement.model');
+// const User = require('../modules/user-management/userManagement.model');
+const User = require('../models/userManagement.model');
 
 // Middleware to protect routes: verifies JWT token and attaches user to request
 const protect = async (req, res, next) => {

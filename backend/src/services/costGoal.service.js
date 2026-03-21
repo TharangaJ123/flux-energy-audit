@@ -1,5 +1,5 @@
-const CostGoal = require('./costGoal.model');
-const { runInTransaction } = require('../../util/transaction');
+const CostGoal = require('../models/costGoal.model');
+const { runInTransaction } = require('../util/transaction');
 
 // Cost goal business logic.
 

@@ -1,6 +1,6 @@
-const ElectricityCost = require('./costManagement.model');
-const { runInTransaction } = require('../../util/transaction');
-const tariffApiService = require('../../services/tariffApiService');
+const ElectricityCost = require('../models/costManagement.model');
+const { runInTransaction } = require('../util/transaction');
+const tariffApiService = require('./tariffApiService');
 
 // Electricity cost business logic.
 
