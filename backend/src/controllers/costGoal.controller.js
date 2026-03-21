@@ -1,5 +1,5 @@
-const costGoalService = require('./costGoal.service');
-const { createGoal, updateGoal } = require('./costGoal.validation');
+const costGoalService = require('../services/costGoal.service');
+const { createGoal, updateGoal } = require('../validations/costGoal.validation');
 
 // Simple controller handlers for cost goals.
 

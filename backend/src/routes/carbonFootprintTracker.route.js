@@ -73,8 +73,8 @@
 
 const express = require('express');
 const router = express.Router();
-const carbonController = require('./carbonFootprintTracker.controller');
-const { protect } = require('../../middleware/auth');
+const carbonController = require('../controllers/carbonFootprintTracker.controller');
+const { protect } = require('../middleware/auth');
 
 router.use(protect);
 

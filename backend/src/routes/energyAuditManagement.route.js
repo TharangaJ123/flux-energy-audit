@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const energyAuditController = require('./energyAuditManagement.controller');
-const auth = require('../../middleware/auth');
+const energyAuditController = require('../controllers/energyAuditManagement.controller');
+const auth = require('../middleware/auth');
 
 // All audit management routes require a valid authentication token
 router.use(auth.protect);
