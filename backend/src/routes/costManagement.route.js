@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const costController = require('./costManagement.controller');
-const costGoalController = require('./costGoal.controller');
-const { protect } = require('../../middleware/auth');
+const costController = require('../controllers/costManagement.controller');
+const costGoalController = require('../controllers/costGoal.controller');
+const { protect } = require('../middleware/auth');
 
 // Routes for electricity costs and cost goals.
 

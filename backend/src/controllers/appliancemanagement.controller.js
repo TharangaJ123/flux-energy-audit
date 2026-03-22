@@ -1,5 +1,5 @@
-const applianceService = require('./appliancemanagement.service');
-const { applianceValidationSchema, updateApplianceValidationSchema } = require('./appliancemanagement.validation');
+const applianceService = require('../services/appliancemanagement.service');
+const { applianceValidationSchema, updateApplianceValidationSchema } = require('../validations/appliancemanagement.validation');
 
 // Create a new appliance record
 const createAppliance = async (req, res) => {
