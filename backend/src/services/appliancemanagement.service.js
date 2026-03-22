@@ -1,6 +1,6 @@
-const Appliance = require('./appliancemanagement.model');
-const { runInTransaction } = require('../../util/transaction');
-const weatherService = require('../../services/weatherService');
+const Appliance = require('../models/appliancemanagement.model');
+const { runInTransaction } = require('../util/transaction');
+const weatherService = require('./weatherService');
 
 // Save a new appliance to the database within a transaction
 const addAppliance = async (applianceData, userId) => {

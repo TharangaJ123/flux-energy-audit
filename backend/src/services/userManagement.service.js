@@ -1,10 +1,10 @@
 /**
  * User Service - Logic for user operations
  */
-const User = require('./userManagement.model');
+const User = require('../models/userManagement.model');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { runInTransaction } = require('../../util/transaction');
+const { runInTransaction } = require('../util/transaction');
 
 // Generate JWT token
 const generateToken = (id) => {

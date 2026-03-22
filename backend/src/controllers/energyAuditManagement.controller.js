@@ -1,5 +1,5 @@
-const energyAuditService = require('./energyAuditManagement.service');
-const { createAudit, updateAudit, simulateAudit } = require('./energyAuditManagement.validation');
+const energyAuditService = require('../services/energyAuditManagement.service');
+const { createAudit, updateAudit, simulateAudit } = require('../validations/energyAuditManagement.validation');
 
 // Handle creating a new energy audit with AI analysis
 exports.createAudit = async (req, res) => {

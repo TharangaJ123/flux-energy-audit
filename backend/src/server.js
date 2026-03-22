@@ -20,11 +20,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const userRoutes = require('./modules/user-management/userManagement.route');
-const energyAuditRoutes = require('./modules/energy-audit-management/energyAuditManagement.route');
-const costRoutes = require('./modules/cost-management/costManagement.route');
-const carbonRoutes = require('./modules/carbon-footprint-tracker/carbonFootprintTracker.route');
-const applianceRoutes = require('./modules/appliance-management/appliancemanagement.route');
+const userRoutes = require('./routes/userManagement.route');
+const energyAuditRoutes = require('./routes/energyAuditManagement.route');
+const costRoutes = require('./routes/costManagement.route');
+const carbonRoutes = require('./routes/carbonFootprintTracker.route');
+const applianceRoutes = require('./routes/appliancemanagement.route');
 
 // Define Routes
 app.use('/api/users', userRoutes);
