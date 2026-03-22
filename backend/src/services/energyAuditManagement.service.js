@@ -1,7 +1,7 @@
-const EnergyAudit = require('./energyAuditManagement.model');
-const Appliance = require('../appliance-management/appliancemanagement.model');
-const geminiService = require('../../services/geminiService');
-const { runInTransaction } = require('../../util/transaction');
+const EnergyAudit = require('../models/energyAuditManagement.model');
+const Appliance = require('../models/appliancemanagement.model');
+const geminiService = require('./geminiService');
+const { runInTransaction } = require('../util/transaction');
 
 // Creates a new audit and performs AI analysis based on the consumed units and appliances
 exports.createAudit = async (userId, data) => {

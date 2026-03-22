@@ -3,8 +3,8 @@
  */
 const express = require('express');
 const router = express.Router();
-const userController = require('./userManagement.controller');
-const { protect } = require('../../middleware/auth');
+const userController = require('../controllers/userManagement.controller');
+const { protect } = require('../middleware/auth');
 
 /**
  * @swagger

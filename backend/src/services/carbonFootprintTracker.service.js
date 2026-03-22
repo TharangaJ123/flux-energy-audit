@@ -1,5 +1,5 @@
-const CarbonFootprint = require('./carbonFootprintTracker.model');
-const { runInTransaction } = require('../../util/transaction');
+const CarbonFootprint = require('../models/carbonFootprintTracker.model');
+const { runInTransaction } = require('../util/transaction');
 const { calculateCO2WithClimatiq } = require('./carbonApi.service');
 
 

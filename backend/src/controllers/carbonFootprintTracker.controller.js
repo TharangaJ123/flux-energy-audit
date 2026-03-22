@@ -1,5 +1,5 @@
-const carbonService = require('./carbonFootprintTracker.service');
-const { createCarbonRecord, updateCarbonRecord } = require('./carbonFootprintTracker.validation');
+const carbonService = require('../services/carbonFootprintTracker.service');
+const { createCarbonRecord, updateCarbonRecord } = require('../validations/carbonFootprintTracker.validation');
 
 // Get all carbon footprint records for the logged-in user.
 const getRecords = async (req, res) => {

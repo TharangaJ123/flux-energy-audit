@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const applianceController = require('./appliancemanagement.controller');
-const { protect, authorize } = require('../../middleware/auth');
+const applianceController = require('../controllers/appliancemanagement.controller');
+const { protect, authorize } = require('../middleware/auth');
 
 // Middleware: All routes below require login and appropriate roles
 router.use(protect);
