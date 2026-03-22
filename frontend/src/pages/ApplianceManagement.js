@@ -14,6 +14,22 @@ const ApplianceManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [city, setCity] = useState('Colombo');
 
+  // Automatically detect location on mount
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        if (data.city) {
+          setCity(data.city);
+        }
+      } catch (err) {
+        console.error('Location detection failed:', err);
+      }
+    };
+    detectLocation();
+  }, []);
+
   // Form state
   const [applianceForm, setApplianceForm] = useState({
     name: '',
