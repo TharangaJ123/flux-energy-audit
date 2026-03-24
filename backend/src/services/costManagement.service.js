@@ -158,6 +158,7 @@ const createCost = async (userId, costData) => {
             year,
             electricityCost: costData.electricityCost,
             notes: costData.notes,
+            document: costData.document,
         });
 
         await cost.save({ session });

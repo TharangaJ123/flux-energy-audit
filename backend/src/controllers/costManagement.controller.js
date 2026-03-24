@@ -1,19 +1,42 @@
 const costService = require('../services/costManagement.service');
 const { createCost, updateCost, estimateCost } = require('../validations/costManagement.validation');
+const fs = require('fs');
 
 // Controller handlers for electricity costs.
+
+const normalizeCreatePayload = (body) => ({
+    month: typeof body.month === 'string' ? parseInt(body.month, 10) : body.month,
+    year: typeof body.year === 'string' ? parseInt(body.year, 10) : body.year,
+    electricityCost:
+        typeof body.electricityCost === 'string' ? parseFloat(body.electricityCost) : body.electricityCost,
+    notes: body.notes,
+});
 
 // Create a monthly electricity cost record.
 const create = async (req, res) => {
     try {
-        const { error } = createCost.validate(req.body);
+        const payload = normalizeCreatePayload(req.body);
+        const { error } = createCost.validate(payload);
         if (error) {
             return res.status(400).json({ message: error.details[0].message });
         }
 
-        const cost = await costService.createCost(req.user._id, req.body);
+        if (req.file) {
+            payload.document = {
+                originalName: req.file.originalname,
+                mimeType: req.file.mimetype,
+                size: req.file.size,
+                path: `/uploads/bills/${req.file.filename}`,
+            };
+        }
+
+        const cost = await costService.createCost(req.user._id, payload);
         res.status(201).json(cost);
     } catch (error) {
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+
         if (error.message === 'Cost for this month already exists') {
             return res.status(400).json({ message: error.message });
         }

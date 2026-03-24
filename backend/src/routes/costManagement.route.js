@@ -3,6 +3,7 @@ const router = express.Router();
 const costController = require('../controllers/costManagement.controller');
 const costGoalController = require('../controllers/costGoal.controller');
 const { protect } = require('../middleware/auth');
+const { handleBillUpload } = require('../middleware/upload');
 
 // Routes for electricity costs and cost goals.
 
@@ -24,6 +25,28 @@ const { protect } = require('../middleware/auth');
  *     requestBody:
  *       required: true
  *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - month
+ *               - year
+ *               - electricityCost
+ *             properties:
+ *               month:
+ *                 type: integer
+ *                 example: 1
+ *               year:
+ *                 type: integer
+ *                 example: 2026
+ *               electricityCost:
+ *                 type: number
+ *                 example: 120.5
+ *               notes:
+ *                 type: string
+ *               document:
+ *                 type: string
+ *                 format: binary
  *         application/json:
  *           schema:
  *             type: object
@@ -52,7 +75,7 @@ const { protect } = require('../middleware/auth');
  *         description: Not authorized
  */
 // Create electricity cost entry.
-router.post('/', protect, costController.create);
+router.post('/', protect, handleBillUpload, costController.create);
 
 /**
  * @swagger

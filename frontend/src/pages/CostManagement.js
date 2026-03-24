@@ -19,6 +19,7 @@ const CostManagement = () => {
     year: new Date().getFullYear(),
     electricityCost: '',
     notes: '',
+    document: null,
   });
 
   // Goal form state
@@ -42,6 +43,15 @@ const CostManagement = () => {
 
   const [estimation, setEstimation] = useState(null);
   const [estimationLoading, setEstimationLoading] = useState(false);
+
+  const getDocumentUrl = (documentPath) => {
+    if (!documentPath) {
+      return '';
+    }
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    const serverBaseUrl = apiUrl.replace(/\/api\/?$/, '');
+    return `${serverBaseUrl}${documentPath}`;
+  };
 
   const fetchCosts = useCallback(async () => {
     setLoading(true);
@@ -90,16 +100,33 @@ const CostManagement = () => {
         setError('Please enter electricity cost');
         return;
       }
+
       if (editingId) {
-        await costApi.updateCost(editingId, costForm);
+        const updatePayload = {
+          month: costForm.month,
+          year: costForm.year,
+          electricityCost: costForm.electricityCost,
+          notes: costForm.notes,
+        };
+        await costApi.updateCost(editingId, updatePayload);
       } else {
-        await costApi.createCost(costForm);
+        const formData = new FormData();
+        formData.append('month', String(costForm.month));
+        formData.append('year', String(costForm.year));
+        formData.append('electricityCost', String(costForm.electricityCost));
+        formData.append('notes', costForm.notes || '');
+        if (costForm.document) {
+          formData.append('document', costForm.document);
+        }
+        await costApi.createCost(formData);
       }
+
       setCostForm({
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
         electricityCost: '',
         notes: '',
+        document: null,
       });
       setEditingId(null);
       setShowForm(false);
@@ -288,6 +315,20 @@ const CostManagement = () => {
                       className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                     />
                   </div>
+                  {!editingId && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Optional Bill Document</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"
+                        onChange={(e) => setCostForm({ ...costForm, document: e.target.files?.[0] || null })}
+                        className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium file:mr-4 file:rounded-lg file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:font-bold file:text-blue-700"
+                      />
+                      {costForm.document && (
+                        <p className="text-xs text-gray-500 mt-2">Selected: {costForm.document.name}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-8 flex gap-4">
                   <button
@@ -319,7 +360,7 @@ const CostManagement = () => {
                         {new Date(2024, cost.month - 1).toLocaleString('default', { month: 'short' })} {cost.year}
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setCostForm(cost); setEditingId(cost._id); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                        <button onClick={() => { setCostForm({ ...cost, document: null }); setEditingId(cost._id); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                         <button onClick={() => handleDeleteCost(cost._id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                       </div>
                     </div>
@@ -327,6 +368,16 @@ const CostManagement = () => {
                       <span className="text-lg font-bold text-gray-400 mr-1">Rs.</span>
                       {cost.electricityCost.toLocaleString()}
                     </p>
+                    {cost.document?.path && (
+                      <a
+                        href={getDocumentUrl(cost.document.path)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-2"
+                      >
+                        View uploaded document
+                      </a>
+                    )}
                     {cost.notes && <p className="text-gray-500 text-sm line-clamp-2 mt-4">{cost.notes}</p>}
                   </div>
                 ))}

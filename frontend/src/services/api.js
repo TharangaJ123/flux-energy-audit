@@ -31,7 +31,16 @@ export const userApi = {
 
 // Cost Management APIs
 export const costApi = {
-  createCost: (costData) => api.post('/costs', costData),
+  createCost: (costData) => {
+    if (costData instanceof FormData) {
+      return api.post('/costs', costData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
+    return api.post('/costs', costData);
+  },
   getCosts: () => api.get('/costs'),
   getCostById: (id) => api.get(`/costs/${id}`),
   updateCost: (id, costData) => api.put(`/costs/${id}`, costData),
