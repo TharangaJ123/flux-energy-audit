@@ -44,4 +44,20 @@ export const costApi = {
   deleteGoal: (id) => api.delete(`/costs/goals/${id}`),
 };
 
+// Appliance Management APIs
+export const applianceApi = {
+  getAppliances: () => api.get('/appliances'),
+};
+
+// Energy Audit Management APIs
+export const energyAuditApi = {
+  createAudit: (auditData) => api.post('/energy-audits', auditData),
+  getAudits: () => api.get('/energy-audits'),
+  getAuditById: (id) => api.get(`/energy-audits/${id}`),
+  updateAudit: (id, auditData) => api.put(`/energy-audits/${id}`, auditData),
+  deleteAudit: (id) => api.delete(`/energy-audits/${id}`),
+  simulateChange: (id, simulationData) => api.post(`/energy-audits/${id}/simulate`, simulationData),
+  chatWithAudit: (id, chatData) => api.post(`/energy-audits/${id}/chat`, chatData),
+};
+
 export default api;
