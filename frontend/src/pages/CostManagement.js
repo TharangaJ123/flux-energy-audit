@@ -57,8 +57,12 @@ const CostManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await costApi.getCosts();
-      setCosts(response.data);
+      const [costsResponse, goalsResponse] = await Promise.all([
+        costApi.getCosts(),
+        costApi.getGoals(),
+      ]);
+      setCosts(costsResponse.data);
+      setGoals(goalsResponse.data);
     } catch (err) {
       setError('Failed to fetch costs: ' + (err.response?.data?.message || err.message));
       if (err.response?.status === 401) {
@@ -73,8 +77,12 @@ const CostManagement = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await costApi.getGoals();
-      setGoals(response.data);
+      const [goalsResponse, costsResponse] = await Promise.all([
+        costApi.getGoals(),
+        costApi.getCosts(),
+      ]);
+      setGoals(goalsResponse.data);
+      setCosts(costsResponse.data);
     } catch (err) {
       setError('Failed to fetch goals: ' + (err.response?.data?.message || err.message));
       if (err.response?.status === 401) {
@@ -221,6 +229,43 @@ const CostManagement = () => {
     </select>
   );
 
+  const getGoalBillSummary = (goal) => {
+    if (goal.type === 'monthly') {
+      const monthlyCost = costs.find((cost) => cost.year === goal.year && cost.month === goal.month);
+      return {
+        hasBillData: Boolean(monthlyCost),
+        billAmount: monthlyCost ? Number(monthlyCost.electricityCost || 0) : 0,
+      };
+    }
+
+    const yearlyCosts = costs.filter((cost) => cost.year === goal.year);
+    return {
+      hasBillData: yearlyCosts.length > 0,
+      billAmount: yearlyCosts.reduce((sum, cost) => sum + Number(cost.electricityCost || 0), 0),
+    };
+  };
+
+  const getMonthlyBillAmount = (month, year) => {
+    const monthlyCost = costs.find((cost) => cost.year === year && cost.month === month);
+    return monthlyCost ? Number(monthlyCost.electricityCost || 0) : null;
+  };
+
+  const monthlyFormBillAmount =
+    goalForm.type === 'monthly' ? getMonthlyBillAmount(goalForm.month, goalForm.year) : null;
+  const monthlyFormGoalExceeds =
+    goalForm.type === 'monthly' &&
+    monthlyFormBillAmount !== null &&
+    Number(goalForm.goalAmount || 0) > monthlyFormBillAmount;
+
+  const getMonthlyGoalForCost = (cost) => {
+    return goals.find(
+      (goal) =>
+        goal.type === 'monthly' &&
+        Number(goal.year) === Number(cost.year) &&
+        Number(goal.month) === Number(cost.month)
+    );
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto py-8 px-4">
@@ -353,7 +398,12 @@ const CostManagement = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {costs.map((cost) => (
+                {costs.map((cost) => {
+                  const monthlyGoal = getMonthlyGoalForCost(cost);
+                  const monthlyGoalExceedsCost =
+                    Boolean(monthlyGoal) && Number(monthlyGoal.goalAmount || 0) > Number(cost.electricityCost || 0);
+
+                  return (
                   <div key={cost._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                     <div className="flex justify-between items-start mb-4">
                       <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-lg uppercase">
@@ -368,6 +418,14 @@ const CostManagement = () => {
                       <span className="text-lg font-bold text-gray-400 mr-1">Rs.</span>
                       {cost.electricityCost.toLocaleString()}
                     </p>
+                    {monthlyGoalExceedsCost && (
+                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
+                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+                        </svg>
+                        Warning: Monthly goal exceeds this bill amount.
+                      </div>
+                    )}
                     {cost.document?.path && (
                       <a
                         href={getDocumentUrl(cost.document.path)}
@@ -380,7 +438,7 @@ const CostManagement = () => {
                     )}
                     {cost.notes && <p className="text-gray-500 text-sm line-clamp-2 mt-4">{cost.notes}</p>}
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>
@@ -442,6 +500,14 @@ const CostManagement = () => {
                       placeholder="0.00"
                       className="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-xl outline-none font-black text-lg"
                     />
+                    {monthlyFormGoalExceeds && (
+                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
+                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+                        </svg>
+                        Warning: Monthly goal exceeds the bill amount for this month.
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button
@@ -454,7 +520,13 @@ const CostManagement = () => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {goals.map((goal) => (
+              {goals.map((goal) => {
+                const { hasBillData, billAmount } = getGoalBillSummary(goal);
+                const goalAmount = Number(goal.goalAmount || 0);
+                const monthlyGoalExceedsBill =
+                  goal.type === 'monthly' && hasBillData && goalAmount > billAmount;
+
+                return (
                 <div key={goal._id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
                   <div className="flex justify-between items-start mb-6">
@@ -469,9 +541,22 @@ const CostManagement = () => {
                   <div className="space-y-2">
                     <p className="text-gray-400 font-bold text-sm uppercase">Budget Limit</p>
                     <p className="text-5xl font-black text-gray-900 italic">Rs. {goal.goalAmount.toLocaleString()}</p>
+                    {hasBillData && (
+                      <p className="text-sm font-semibold text-gray-600 pt-1">
+                        Related Bill Amount: Rs. {billAmount.toLocaleString()}
+                      </p>
+                    )}
+                    {monthlyGoalExceedsBill && (
+                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
+                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+                        </svg>
+                        Warning: Monthly goal exceeds the bill amount.
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         )}
