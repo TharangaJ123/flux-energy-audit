@@ -18,17 +18,6 @@ const Home = () => {
       color: 'blue'
     },
     {
-      title: 'Appliance Inventory',
-      desc: 'Catalog your appliances and monitor their individual energy consumption.',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-        </svg>
-      ),
-      path: '/appliance-management',
-      color: 'indigo'
-    },
-    {
       title: 'Energy Audit',
       desc: 'Schedule and view comprehensive energy audits to find saving opportunities.',
       icon: (
@@ -38,17 +27,6 @@ const Home = () => {
       ),
       path: '/energy-audit',
       color: 'emerald'
-    },
-    {
-      title: 'Carbon Tracker',
-      desc: 'Analyze your environmental impact and monitor your carbon footprint progress.',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      path: '/carbon-tracker',
-      color: 'teal'
     },
     {
       title: 'User Profile',
@@ -73,7 +51,7 @@ const Home = () => {
               Master Your Home’s <span className="text-blue-200">Energy Consumption</span>
             </h1>
             <p className="text-xl text-blue-100 mb-8 font-light">
-              Analyze costs, audit your appliances, and track your carbon footprint with Sri Lanka’s first complete energy management platform.
+              Analyze costs and perform comprehensive energy audits with Sri Lanka’s first complete energy management platform.
             </p>
             <div className="flex gap-4">
               <button
@@ -180,8 +158,8 @@ const Home = () => {
               <svg fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
             </div>
             <div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Inventory Management</h4>
-              <p className="text-gray-600">Keep a detailed record of every appliance from refrigerators to tiny LED smart bulbs.</p>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">AI Optimization</h4>
+              <p className="text-gray-600">Get personalized advice on how to reduce your consumption using our advanced AI algorithms.</p>
             </div>
           </div>
         </div>

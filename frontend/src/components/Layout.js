@@ -23,7 +23,6 @@ const Layout = ({ children }) => {
                             <h4 className="font-bold text-gray-900 mb-4">Features</h4>
                             <ul className="space-y-2 text-gray-400">
                                 <li><Link to="/cost-management" className="hover:text-blue-600">Cost Tracking</Link></li>
-                                <li><Link to="/appliance-management" className="hover:text-blue-600">Appliance Management</Link></li>
                                 <li><Link to="/energy-audit" className="hover:text-blue-600">Audit Reports</Link></li>
                             </ul>
                         </div>
