@@ -29,6 +29,8 @@ const EnergyAuditManagement = () => {
         selectedAppliances: []
     });
 
+    const [isEditing, setIsEditing] = useState(null);
+
     const formatMonth = (monthStr) => {
         if (!monthStr) return '';
         const [year, month] = monthStr.split('-');
@@ -84,7 +86,7 @@ const EnergyAuditManagement = () => {
                 selectedAppliances: [...form.selectedAppliances, {
                     applianceId: appliance._id,
                     name: appliance.name,
-                    usageHours: appliance.usageHours
+                    usageHours: appliance.usageHours || 1
                 }]
             });
         }
@@ -98,20 +100,59 @@ const EnergyAuditManagement = () => {
                 setError('Please provide usage units and select appliances');
                 return;
             }
-            const response = await energyAuditApi.createAudit({
+
+            const auditData = {
                 month: form.month,
                 totalUnits: parseFloat(form.totalUnits),
                 householdSize: parseInt(form.householdSize),
                 peakUsage: form.peakUsage,
                 appliances: form.selectedAppliances.map(({ applianceId, usageHours }) => ({ applianceId, usageHours }))
-            });
-            setAudits([response.data, ...audits]);
-            setActiveAudit(response.data);
+            };
+
+            if (isEditing) {
+                const response = await energyAuditApi.updateAudit(isEditing, auditData);
+                setAudits(audits.map(a => a._id === isEditing ? response.data : a));
+                setActiveAudit(response.data);
+                setIsEditing(null);
+            } else {
+                const response = await energyAuditApi.createAudit(auditData);
+                setAudits([response.data, ...audits]);
+                setActiveAudit(response.data);
+            }
             setShowForm(false);
             setForm({ month: new Date().toISOString().slice(0, 7), totalUnits: '', householdSize: 1, peakUsage: 'Day', selectedAppliances: [] });
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create energy audit');
+            setError(err.response?.data?.message || 'Failed to process energy audit');
         }
+    };
+
+    const handleDeleteAudit = async (id, e) => {
+        e.stopPropagation();
+        if (!window.confirm('Are you sure you want to delete this audit?')) return;
+        try {
+            await energyAuditApi.deleteAudit(id);
+            setAudits(audits.filter(a => a._id !== id));
+            if (activeAudit?._id === id) setActiveAudit(null);
+        } catch (err) {
+            console.error('Delete error:', err);
+        }
+    };
+
+    const startEditing = () => {
+        if (!activeAudit) return;
+        setIsEditing(activeAudit._id);
+        setForm({
+            month: activeAudit.month,
+            totalUnits: activeAudit.totalUnits,
+            householdSize: activeAudit.householdSize,
+            peakUsage: activeAudit.peakUsage,
+            selectedAppliances: activeAudit.appliances.map(a => ({
+                applianceId: a.applianceId?._id || a.applianceId,
+                name: a.applianceId?.name || '',
+                usageHours: a.usageHours
+            }))
+        });
+        setShowForm(true);
     };
 
     const handleChat = async (e) => {
@@ -164,7 +205,9 @@ const EnergyAuditManagement = () => {
                             </button>
                         </div>
 
-                        {audits.length === 0 ? (
+                        {loading ? (
+                            <p className="text-center text-gray-400">Loading...</p>
+                        ) : audits.length === 0 ? (
                             <p className="text-gray-400 text-sm font-medium italic">No audits performed yet.</p>
                         ) : (
                             <div className="space-y-3">
@@ -175,11 +218,16 @@ const EnergyAuditManagement = () => {
                                         className={`p-4 rounded-2xl cursor-pointer transition-all border-2 ${activeAudit?._id === audit._id ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-transparent hover:bg-white hover:shadow-md'}`}
                                     >
                                         <p className="font-black text-xs text-blue-800 uppercase tracking-tighter mb-1">{formatMonth(audit.month)} {new Date(audit.createdAt).getFullYear()}</p>
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex justify-between items-center group">
                                             <span className="text-lg font-black text-gray-900">{audit.totalUnits} <span className="text-xs font-bold text-gray-400">units</span></span>
-                                            <span className={`px-2 py-1 text-[8px] font-black rounded-lg uppercase ${audit.efficiencyScore > 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                Score: {audit.efficiencyScore || 'N/A'}
-                                            </span>
+                                            <div className="flex gap-2">
+                                                <button onClick={(e) => handleDeleteAudit(audit._id, e)} className="p-1.5 bg-rose-50 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                                <span className={`px-2 py-1 text-[8px] font-black rounded-lg uppercase ${audit.efficiencyScore > 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                    Score: {audit.efficiencyScore || 'N/A'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -198,7 +246,10 @@ const EnergyAuditManagement = () => {
                 <div className="flex-grow space-y-8">
                     {showForm ? (
                         <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-500">
-                            <h2 className="text-3xl font-black text-gray-900 mb-8 italic">Start New Energy Audit</h2>
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-3xl font-black text-gray-900 italic">{isEditing ? 'Update Energy Audit' : 'Start New Energy Audit'}</h2>
+                                <button onClick={() => { setShowForm(false); setIsEditing(null); }} className="text-gray-400 hover:text-gray-900 font-black uppercase text-xs tracking-widest">Cancel</button>
+                            </div>
                             {error && <p className="bg-rose-50 text-rose-600 p-4 rounded-2xl mb-6 font-bold">{error}</p>}
                             <form onSubmit={handleCreateAudit} className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -249,7 +300,7 @@ const EnergyAuditManagement = () => {
                                 </div>
 
                                 <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-2xl hover:bg-blue-700 shadow-2xl shadow-blue-100 transition-all active:scale-[0.98]">
-                                    Generate AI Analysis
+                                    {isEditing ? 'Update Audit with AI' : 'Generate AI Analysis'}
                                 </button>
                             </form>
                         </div>
@@ -263,7 +314,10 @@ const EnergyAuditManagement = () => {
                         <div className="space-y-8 animate-in fade-in duration-700">
                             {/* AI Analysis Summary */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
+                                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 relative group">
+                                    <button onClick={startEditing} className="absolute top-8 right-8 p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm opacity-0 group-hover:opacity-100">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    </button>
                                     <p className="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Efficiency Status</p>
                                     <div className="flex items-end gap-3 mb-2">
                                         <h3 className={`text-6xl font-black ${activeAudit.efficiencyScore > 70 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -361,15 +415,15 @@ const EnergyAuditManagement = () => {
                                     </div>
                                     <div className="space-y-6">
                                         {activeAudit.appliances?.slice(0, 3).map(item => (
-                                            <div key={item.applianceId} className="space-y-3">
-                                                <div className="flex justify-between items-center px-1">
-                                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{item.applianceId?.name || 'Device'}</span>
+                                            <div key={item.applianceId?._id || item.applianceId}>
+                                                <div className="flex justify-between items-center px-1 mb-2">
+                                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{item.applianceId?.name || item.name || 'Device'}</span>
                                                     <span className="text-xs font-bold text-blue-600">{item.usageHours}h Usage</span>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <input
                                                         type="range" min="0" max="24" step="0.5" defaultValue={item.usageHours}
-                                                        onMouseUp={(e) => runSimulation(item.applianceId?._id, 'usageHours', e.target.value)}
+                                                        onMouseUp={(e) => runSimulation(item.applianceId?._id || item.applianceId, 'usageHours', e.target.value)}
                                                         className="grow accent-blue-600 h-2 mt-4"
                                                     />
                                                 </div>
