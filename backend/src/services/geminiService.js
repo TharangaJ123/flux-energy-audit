@@ -7,7 +7,34 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Helper function to call Gemini with a retry mechanism if the service is busy
+const callGemini = async (prompt, retries = 2) => {
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = response.text();
+        
+        // Advanced cleaning for any AI artifacts
+        text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+        
+        // Find the first { and last } to isolate the JSON object if there's any stray text
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start !== -1 && end !== -1) {
+            return JSON.parse(text.substring(start, end + 1));
+        }
+        return JSON.parse(text);
+    } catch (error) {
+        if (retries > 0 && error.status === 503) {
+            console.log(`AI busy, retrying... (${retries} left)`);
+            await new Promise(res => setTimeout(res, 2000)); // Wait 2s before retry
+            return callGemini(prompt, retries - 1);
+        }
+        throw error;
+    }
+};
 
 // Generates an AI analysis summary and recommendations for an energy audit
 exports.generateAuditAnalysis = async (data) => {
@@ -20,25 +47,26 @@ exports.generateAuditAnalysis = async (data) => {
     - Appliances: ${JSON.stringify(data.appliances)}
     - Previous Month Units: ${data.previousMonthUnits || 'N/A'}
 
-    Please provide a response in valid JSON format with the following fields:
+    Please provide a response in valid JSON format ONLY with the following fields:
     - ai_summary: A concise summary of energy usage behavior (max 2 sentences).
     - ai_recommendations: An array of 3 specific, actionable recommendations to reduce consumption.
     - efficiency_score: A number between 0 and 100 representing energy efficiency.
     - badges: An array of strings (e.g., "Efficient Home", "High Consumer").
     
-    Do not include markdown formatting like \`\`\`json. Just the raw JSON object.
+    Do not include markdown formatting or side commentary.
   `;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = response.text();
-        // Clean up potential markdown code blocks
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(text);
+        return await callGemini(prompt);
     } catch (error) {
         console.error("Error generating audit analysis:", error);
-        throw new Error("Failed to generate AI analysis");
+        // Return a mock object if AI is completely unavailable so the app doesn't crash
+        return {
+            ai_summary: "Unable to generate AI analysis at this time.",
+            ai_recommendations: ["Manually check heavy appliances.", "Monitor peak hour usage.", "Consider switching to LED bulbs."],
+            efficiency_score: 50,
+            badges: ["AI Offline"]
+        };
     }
 };
 
@@ -64,26 +92,21 @@ exports.generateSimulation = async (baseData, changes) => {
     `;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = response.text();
-        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(text);
+        return await callGemini(prompt);
     } catch (error) {
         console.error("Error generating simulation:", error);
-        throw new Error("Failed to generate simulation results");
+        return {
+            estimated_units: baseData.totalUnits * 0.9,
+            estimated_savings_units: baseData.totalUnits * 0.1,
+            estimated_savings_cost: baseData.totalUnits * 3,
+            explanation: "Simple estimate: Reducing usage generally yields 10-15% savings.",
+            co2_reduction: baseData.totalUnits * 0.08
+        };
     }
 };
 
 // Generates a helpful response to user queries within an energy audit context
 exports.generateChatResponse = async (history, message, context) => {
-    const chat = model.startChat({
-        history: history.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }],
-        })),
-    });
-
     const prompt = `
     Context:
     ${JSON.stringify(context)}
@@ -91,14 +114,21 @@ exports.generateChatResponse = async (history, message, context) => {
     User Query: ${message}
 
     Answer the user's question based on the context of their energy audit. Keep it helpful and concise.
+    If the service is over capacity, apologize briefly but offer one clear piece of general energy saving advice.
   `;
 
     try {
+        const chat = model.startChat({
+            history: history.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }],
+            })),
+        });
         const result = await chat.sendMessage(prompt);
         const response = await result.response;
         return response.text();
     } catch (error) {
         console.error("Error generating chat response:", error);
-        throw new Error("Failed to generate chat response");
+        return "I'm having trouble connecting to my AI core right now due to high demand. General tip: Switch off standby lights to save up to 5% on your bill!";
     }
 };
