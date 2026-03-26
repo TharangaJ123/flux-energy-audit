@@ -46,9 +46,11 @@ const EnergyAuditManagement = () => {
     const fetchAppliances = useCallback(async () => {
         try {
             const response = await applianceApi.getAppliances();
-            setAppliances(response.data);
+            // The API returns { message, results, data: [...] }
+            setAppliances(response.data.data || []);
         } catch (err) {
             console.error('Appliance fetch error:', err);
+            setAppliances([]);
         }
     }, []);
 

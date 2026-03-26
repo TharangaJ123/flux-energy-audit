@@ -49,9 +49,9 @@ const ApplianceManagement = () => {
         applianceApi.getApplianceStats(),
         applianceApi.getEnergyAudit(city)
       ]);
-      setAppliances(applianceRes.data.data);
-      setStats(statsRes.data.data);
-      setAuditData(auditRes.data.data);
+      setAppliances(applianceRes.data.data || []);
+      setStats(statsRes.data.data || null);
+      setAuditData(auditRes.data.data || null);
     } catch (err) {
       setError('Failed to fetch data: ' + (err.response?.data?.message || err.message));
       if (err.response?.status === 401) {
@@ -149,11 +149,10 @@ const ApplianceManagement = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-6 font-bold whitespace-nowrap transition-all ${
-                activeTab === tab
+              className={`pb-3 px-6 font-bold whitespace-nowrap transition-all ${activeTab === tab
                   ? 'border-b-4 border-blue-600 text-blue-600'
                   : 'text-gray-500 hover:text-gray-800'
-              }`}
+                }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)} Dashboard
             </button>
@@ -261,9 +260,8 @@ const ApplianceManagement = () => {
                   setShowForm(!showForm);
                   if (!showForm) setEditingId(null);
                 }}
-                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${
-                  showForm ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
+                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${showForm ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
               >
                 {showForm ? 'Cancel' : '+ New Appliance'}
               </button>
