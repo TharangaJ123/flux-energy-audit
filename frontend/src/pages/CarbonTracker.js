@@ -81,7 +81,23 @@ const CarbonTracker = () => {
         setError('Please enter electricity consumption.');
         return;
       }
-      await carbonService.createRecord(form);
+
+      // Prepare payload to ensure numbers are safely parsed
+      const payload = {
+        ...form,
+        electricity: parseFloat(form.electricity) || 0,
+        waste: parseFloat(form.waste) || 0,
+        month: String(form.month),
+        year: parseInt(form.year, 10),
+        gasAmounts: Object.fromEntries(
+          Object.entries(form.gasAmounts).map(([k, v]) => [k, parseFloat(v) || 0])
+        ),
+        transportDistances: Object.fromEntries(
+          Object.entries(form.transportDistances).map(([k, v]) => [k, parseFloat(v) || 0])
+        )
+      };
+
+      await carbonService.createRecord(payload);
       setForm({
         month: String(new Date().getMonth() + 1),
         year: new Date().getFullYear(),
@@ -113,40 +129,48 @@ const CarbonTracker = () => {
   const getDynamicTips = (record) => {
     const tips = [];
 
-    // Electricity
-    if (record.electricity > 150) {
-      tips.push("Your electricity usage is quite high. Try switching to LED bulbs, using energy-efficient appliances, or minimizing AC usage.");
-    }
+    if (record.status === 'High') {
+      // Electricity
+      if (record.electricity > 150) {
+        tips.push("Your electricity usage is quite high. Try switching to LED bulbs, using energy-efficient appliances, or minimizing AC usage.");
+      }
 
-    // Waste
-    if (record.waste > 20) {
-      tips.push("Waste generation is above average. Implement a composting system for organic waste and actively recycle plastics and paper.");
-    }
+      // Waste
+      if (record.waste > 20) {
+        tips.push("Waste generation is above average. Implement a composting system for organic waste and actively recycle plastics and paper.");
+      }
 
-    // Gas
-    let gasHigh = false;
-    if (record.gasData && record.gasData.amounts) {
-      const amounts = record.gasData.amounts;
-      if (amounts.natural > 30 || amounts.lpg > 15) gasHigh = true;
-    }
-    if (gasHigh) {
-      tips.push("Gas consumption is significant. Ensure your cooking and heating appliances are well-maintained to improve efficiency and reduce gas usage.");
-    }
+      // Gas
+      let gasHigh = false;
+      if (record.gasData && record.gasData.amounts) {
+        const amounts = record.gasData.amounts;
+        if (amounts.natural > 30 || amounts.lpg > 15) gasHigh = true;
+      }
+      if (gasHigh) {
+        tips.push("Gas consumption is significant. Ensure your cooking and heating appliances are well-maintained.");
+      }
 
-    // Transport
-    let carDistance = 0;
-    if (record.transportData && record.transportData.distances) {
-      const dist = record.transportData.distances;
-      carDistance = (parseFloat(dist.petrolCar) || 0) + (parseFloat(dist.dieselCar) || 0);
-    }
-    if (carDistance > 100) {
-      tips.push("Personal vehicle usage is high. Consider carpooling, combining errands, or using public transportation to lower your carbon footprint.");
-    }
+      // Transport
+      let carDistance = 0;
+      if (record.transportData && record.transportData.distances) {
+        const dist = record.transportData.distances;
+        carDistance = (parseFloat(dist.petrolCar) || 0) + (parseFloat(dist.dieselCar) || 0);
+      }
+      if (carDistance > 100) {
+        tips.push("Personal vehicle usage is high. Consider carpooling or using public transportation.");
+      }
 
-    // Fallback if none trigger but status is High
-    if (tips.length === 0) {
-      tips.push("Consider a comprehensive energy audit to identify hidden areas of high emissions.");
-      tips.push("Small changes in daily routines can collectively reduce your footprint over time.");
+      if (tips.length === 0) {
+        tips.push("Consider a comprehensive energy audit to identify hidden areas of high emissions.");
+      }
+    } else if (record.status === 'Moderate') {
+      tips.push("You're doing well! Try to reduce energy use during peak hours to reach 'Low' status.");
+      tips.push("Ensure all idle electronics are unplugged to eliminate phantom power consumption.");
+      tips.push("Small changes like using a kettle only for the amount needed can help.");
+    } else {
+      tips.push("Excellent work! You're a green champion. Keep maintaining these sustainable habits.");
+      tips.push("Great job! Keep using natural light during the day to maintain your low energy usage.");
+      tips.push("Consider sharing your energy-saving tips with neighbors to build a greener community.");
     }
 
     return tips;
@@ -222,29 +246,29 @@ const CarbonTracker = () => {
       <div className="max-w-6xl mx-auto py-8 px-4 font-sans">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600 mb-2">
+            <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
               Carbon Footprint Tracker
             </h1>
             <p className="text-gray-500 text-lg font-light">
               Measure, monitor, and reduce your environmental impact.
             </p>
           </div>
-          <div className="flex bg-white shadow-sm border border-gray-100 p-1.5 rounded-2xl w-fit">
+          <div className="flex bg-gray-100 p-1.5 rounded-2xl w-fit">
             <button
               onClick={() => setActiveTab('records')}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'records' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'records' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               My Records
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'analytics' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'analytics' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Trend Graph
             </button>
             <button
               onClick={() => setActiveTab('breakdown')}
-              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'breakdown' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'breakdown' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Breakdown Graph
             </button>
@@ -258,8 +282,9 @@ const CarbonTracker = () => {
           </div>
         )}
 
-        <div className="space-y-8">
-          <div className="flex justify-between items-center">
+        {activeTab === 'records' && (
+          <div className="space-y-8">
+            <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">Historical Footprints</h2>
             <button
               onClick={() => setShowForm(!showForm)}
@@ -315,8 +340,8 @@ const CarbonTracker = () => {
                           key={gas.id}
                           onClick={() => handleGasSelection(gas.id)}
                           className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border ${form.gasSelections.includes(gas.id)
-                              ? 'bg-teal-600 border-teal-600 text-white shadow-md'
-                              : 'bg-white border-teal-200 text-teal-700 hover:bg-teal-50'
+                            ? 'bg-teal-600 border-teal-600 text-white shadow-md'
+                            : 'bg-white border-teal-200 text-teal-700 hover:bg-teal-50'
                             }`}
                         >
                           {gas.label}
@@ -351,8 +376,8 @@ const CarbonTracker = () => {
                           key={trans.id}
                           onClick={() => handleTransportSelection(trans.id)}
                           className={`px-3 py-2 rounded-lg text-sm font-bold transition-all border ${form.transportSelections.includes(trans.id)
-                              ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
-                              : 'bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
+                            : 'bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50'
                             }`}
                         >
                           {trans.label}
@@ -400,10 +425,9 @@ const CarbonTracker = () => {
             </div>
           )}
 
-          {loading ? (
-            <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>
-          ) : activeTab === 'records' ? (
-            records.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>
+            ) : records.length === 0 ? (
               <div className="bg-white/50 backdrop-blur-sm p-16 rounded-[2rem] border-2 border-dashed border-teal-100 text-center">
                 <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-6 text-teal-500 shadow-inner">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
@@ -442,27 +466,33 @@ const CarbonTracker = () => {
                         </div>
                       </div>
 
-                      {record.status === 'High' && (
-                        <div className="mt-2 bg-amber-50 rounded-xl p-4 border border-amber-100">
-                          <div className="flex items-center gap-2 mb-2">
-                            <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span className="font-bold text-amber-800 text-sm">Actionable Tips</span>
-                          </div>
-                          <ul className="list-disc pl-5 text-xs text-amber-700 space-y-1 font-medium">
-                            {getDynamicTips(record).map((tip, idx) => (
-                              <li key={idx}>{tip}</li>
-                            ))}
-                          </ul>
+                      <div className={`mt-2 rounded-xl p-4 border ${record.status === 'High' ? 'bg-amber-50 border-amber-100' : record.status === 'Moderate' ? 'bg-blue-50 border-blue-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className={`w-5 h-5 ${record.status === 'High' ? 'text-amber-500' : record.status === 'Moderate' ? 'text-blue-500' : 'text-emerald-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          <span className={`font-bold text-sm ${record.status === 'High' ? 'text-amber-800' : record.status === 'Moderate' ? 'text-blue-800' : 'text-emerald-800'}`}>Actionable Tips</span>
                         </div>
-                      )}
+                        <ul className={`list-disc pl-5 text-xs space-y-1 font-medium ${record.status === 'High' ? 'text-amber-700' : record.status === 'Moderate' ? 'text-blue-700' : 'text-emerald-700'}`}>
+                          {getDynamicTips(record).map((tip, idx) => (
+                            <li key={idx}>{tip}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            )
-          ) : activeTab === 'analytics' ? (
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 animate-in fade-in duration-300">
-              <h3 className="text-2xl font-extrabold mb-8 text-gray-800">Emissions Trend</h3>
+            )}
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-8">
+            {loading ? (
+              <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>
+            ) : (
+              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 animate-in fade-in duration-300">
+                <h3 className="text-2xl font-extrabold mb-8 text-gray-800">Emissions Trend</h3>
               {records.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500">No data available to construct the tracking graph.</p>
@@ -489,10 +519,19 @@ const CarbonTracker = () => {
                   </ResponsiveContainer>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 animate-in fade-in duration-300">
-              <h3 className="text-2xl font-extrabold mb-8 text-gray-800">Emissions Breakdown</h3>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Breakdown Tab */}
+        {activeTab === 'breakdown' && (
+          <div className="space-y-8">
+            {loading ? (
+              <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>
+            ) : (
+              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 animate-in fade-in duration-300">
+                <h3 className="text-2xl font-extrabold mb-8 text-gray-800">Emissions Breakdown</h3>
               {records.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500">No data available for breakdown graph.</p>
@@ -517,9 +556,10 @@ const CarbonTracker = () => {
                   </ResponsiveContainer>
                 </div>
               )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );
