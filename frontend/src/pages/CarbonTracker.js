@@ -112,17 +112,17 @@ const CarbonTracker = () => {
 
   const getDynamicTips = (record) => {
     const tips = [];
-    
+
     // Electricity
     if (record.electricity > 150) {
       tips.push("Your electricity usage is quite high. Try switching to LED bulbs, using energy-efficient appliances, or minimizing AC usage.");
     }
-    
+
     // Waste
     if (record.waste > 20) {
       tips.push("Waste generation is above average. Implement a composting system for organic waste and actively recycle plastics and paper.");
     }
-    
+
     // Gas
     let gasHigh = false;
     if (record.gasData && record.gasData.amounts) {
@@ -132,7 +132,7 @@ const CarbonTracker = () => {
     if (gasHigh) {
       tips.push("Gas consumption is significant. Ensure your cooking and heating appliances are well-maintained to improve efficiency and reduce gas usage.");
     }
-    
+
     // Transport
     let carDistance = 0;
     if (record.transportData && record.transportData.distances) {
@@ -148,7 +148,7 @@ const CarbonTracker = () => {
       tips.push("Consider a comprehensive energy audit to identify hidden areas of high emissions.");
       tips.push("Small changes in daily routines can collectively reduce your footprint over time.");
     }
-    
+
     return tips;
   };
 
@@ -189,7 +189,7 @@ const CarbonTracker = () => {
   const chartData = [...records].reverse().map(r => {
     // Calculate breakdown for the graph
     const elecCO2 = (parseFloat(r.electricity) || 0) * EMISSION_FACTORS.electricity;
-    
+
     let gasCO2 = 0;
     if (r.gasData && r.gasData.amounts) {
       if (r.gasData.amounts.natural) gasCO2 += (parseFloat(r.gasData.amounts.natural) || 0) * EMISSION_FACTORS.naturalGas;
@@ -231,20 +231,20 @@ const CarbonTracker = () => {
           </div>
           <div className="flex bg-white shadow-sm border border-gray-100 p-1.5 rounded-2xl w-fit">
             <button
-               onClick={() => setActiveTab('records')}
-               className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'records' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('records')}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'records' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               My Records
             </button>
             <button
-               onClick={() => setActiveTab('analytics')}
-               className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'analytics' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('analytics')}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'analytics' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Trend Graph
             </button>
             <button
-               onClick={() => setActiveTab('breakdown')}
-               className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'breakdown' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('breakdown')}
+              className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === 'breakdown' ? 'bg-teal-50 text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Breakdown Graph
             </button>
@@ -273,7 +273,7 @@ const CarbonTracker = () => {
             <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl border border-white/50 animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
               <h3 className="text-2xl font-extrabold mb-8 text-gray-800 relative z-10">New Footprint Record</h3>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative z-10">
                 {/* Left Column */}
                 <div className="space-y-6">
@@ -314,11 +314,10 @@ const CarbonTracker = () => {
                         <button
                           key={gas.id}
                           onClick={() => handleGasSelection(gas.id)}
-                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border ${
-                            form.gasSelections.includes(gas.id)
+                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all border ${form.gasSelections.includes(gas.id)
                               ? 'bg-teal-600 border-teal-600 text-white shadow-md'
                               : 'bg-white border-teal-200 text-teal-700 hover:bg-teal-50'
-                          }`}
+                            }`}
                         >
                           {gas.label}
                         </button>
@@ -351,11 +350,10 @@ const CarbonTracker = () => {
                         <button
                           key={trans.id}
                           onClick={() => handleTransportSelection(trans.id)}
-                          className={`px-3 py-2 rounded-lg text-sm font-bold transition-all border ${
-                            form.transportSelections.includes(trans.id)
+                          className={`px-3 py-2 rounded-lg text-sm font-bold transition-all border ${form.transportSelections.includes(trans.id)
                               ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
                               : 'bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                          }`}
+                            }`}
                         >
                           {trans.label}
                         </button>
@@ -390,7 +388,7 @@ const CarbonTracker = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-10 flex gap-4 relative z-10 pt-6 border-t border-teal-100/50">
                 <button
                   onClick={handleSubmit}
@@ -403,7 +401,7 @@ const CarbonTracker = () => {
           )}
 
           {loading ? (
-             <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>
+            <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>
           ) : activeTab === 'records' ? (
             records.length === 0 ? (
               <div className="bg-white/50 backdrop-blur-sm p-16 rounded-[2rem] border-2 border-dashed border-teal-100 text-center">
@@ -416,51 +414,51 @@ const CarbonTracker = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {records.map((record) => (
-                <div key={record._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-teal-100/50 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50/50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-500"></div>
-                  
-                  <div className="flex justify-between items-start mb-6 relative z-10">
-                    <div className="px-4 py-1.5 bg-gray-900 text-white text-xs font-black rounded-xl uppercase tracking-wider shadow-sm">
-                      {new Date(2024, record.month - 1).toLocaleString('default', { month: 'short' })} {record.year}
-                    </div>
-                    <button onClick={() => handleDelete(record._id)} className="p-2 hover:bg-red-50 text-red-400 hover:text-red-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                  </div>
-                  
-                  <div className="relative z-10 mb-6">
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Total Emissions</p>
-                    <p className="text-5xl font-black text-gray-900 flex items-baseline gap-2">
-                      {record.co2Emission?.toFixed(1) || '0.0'}
-                      <span className="text-lg font-bold text-gray-400">kg CO₂</span>
-                    </p>
-                  </div>
-                  
-                  <div className="relative z-10 border-t border-gray-100 pt-4 flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-500 font-medium">Rating:</div>
-                      <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(record.status)}`}>
-                        {record.status}
+                  <div key={record._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-teal-100/50 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50/50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-500"></div>
+
+                    <div className="flex justify-between items-start mb-6 relative z-10">
+                      <div className="px-4 py-1.5 bg-gray-900 text-white text-xs font-black rounded-xl uppercase tracking-wider shadow-sm">
+                        {new Date(2024, record.month - 1).toLocaleString('default', { month: 'short' })} {record.year}
                       </div>
+                      <button onClick={() => handleDelete(record._id)} className="p-2 hover:bg-red-50 text-red-400 hover:text-red-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
-                    
-                    {record.status === 'High' && (
-                      <div className="mt-2 bg-amber-50 rounded-xl p-4 border border-amber-100">
-                        <div className="flex items-center gap-2 mb-2">
-                          <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                          <span className="font-bold text-amber-800 text-sm">Actionable Tips</span>
+
+                    <div className="relative z-10 mb-6">
+                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Total Emissions</p>
+                      <p className="text-5xl font-black text-gray-900 flex items-baseline gap-2">
+                        {record.co2Emission?.toFixed(1) || '0.0'}
+                        <span className="text-lg font-bold text-gray-400">kg CO₂</span>
+                      </p>
+                    </div>
+
+                    <div className="relative z-10 border-t border-gray-100 pt-4 flex flex-col gap-4">
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-500 font-medium">Rating:</div>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${getStatusColor(record.status)}`}>
+                          {record.status}
                         </div>
-                        <ul className="list-disc pl-5 text-xs text-amber-700 space-y-1 font-medium">
-                          {getDynamicTips(record).map((tip, idx) => (
-                            <li key={idx}>{tip}</li>
-                          ))}
-                        </ul>
                       </div>
-                    )}
+
+                      {record.status === 'High' && (
+                        <div className="mt-2 bg-amber-50 rounded-xl p-4 border border-amber-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span className="font-bold text-amber-800 text-sm">Actionable Tips</span>
+                          </div>
+                          <ul className="list-disc pl-5 text-xs text-amber-700 space-y-1 font-medium">
+                            {getDynamicTips(record).map((tip, idx) => (
+                              <li key={idx}>{tip}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
             )
           ) : activeTab === 'analytics' ? (
             <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 animate-in fade-in duration-300">
@@ -475,14 +473,14 @@ const CarbonTracker = () => {
                     <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorCo2" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#0d9488" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#0d9488" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}kg`} />
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                         itemStyle={{ color: '#0f766e', fontWeight: 'bold' }}
                       />
@@ -506,7 +504,7 @@ const CarbonTracker = () => {
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}kg`} />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                         itemStyle={{ fontWeight: 'bold' }}
                       />
