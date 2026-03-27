@@ -41,6 +41,10 @@ const Home = () => {
     }
   ];
 
+  const handleApplianceManagement = () => {
+    navigate('/appliance-management');
+  };
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -72,7 +76,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Stats/Quick Info (Optional) */}
+
+      {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
@@ -85,6 +90,7 @@ const Home = () => {
             <h4 className="text-2xl font-bold text-gray-900">Optimal</h4>
           </div>
         </div>
+
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,10 +102,11 @@ const Home = () => {
             <h4 className="text-2xl font-bold text-gray-900">Up to Date</h4>
           </div>
         </div>
+
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" />
             </svg>
           </div>
           <div>
@@ -108,6 +115,94 @@ const Home = () => {
           </div>
         </div>
       </div>
+
+      {/* Appliance Management Featured Card */}
+      <div 
+        className="bg-white rounded-3xl p-8 mb-16 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all cursor-pointer group"
+        onClick={handleApplianceManagement}
+      >
+        <div className="flex flex-col md:flex-row gap-8 items-center">
+          <div className="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div className="flex-1 text-center md:text-left">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">Appliance Management</h2>
+            <p className="text-gray-600 text-lg mb-6 max-w-2xl">
+              Register household appliances, track their individual power consumption, and get weather-driven energy saving insights tailored for your city.
+            </p>
+            <button className="bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg shadow-green-200">
+              Manage Appliances →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature Highlights Section */}
+      <div className="mb-20">
+        <h3 className="text-3xl font-bold text-gray-900 mb-8 ml-1">Why Choose Flux?</h3>
+        <div className="bg-white rounded-3xl p-10 border border-gray-100 shadow-sm">
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <li className="flex items-start">
+              <div className="mt-1 bg-green-100 p-1 rounded-full mr-4 text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block mb-1">Real-time Tracking</span>
+                <span className="text-gray-500 text-sm">Monitor your energy usage patterns instantly.</span>
+              </div>
+            </li>
+            <li className="flex items-start">
+              <div className="mt-1 bg-green-100 p-1 rounded-full mr-4 text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block mb-1">Accurate Billing</span>
+                <span className="text-gray-500 text-sm">Built-in CEB & LECO tariff slab calculations.</span>
+              </div>
+            </li>
+            <li className="flex items-start">
+              <div className="mt-1 bg-green-100 p-1 rounded-full mr-4 text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block mb-1">Goal Monitoring</span>
+                <span className="text-gray-500 text-sm">Set monthly saving targets and track progress.</span>
+              </div>
+            </li>
+            <li className="flex items-start">
+              <div className="mt-1 bg-green-100 p-1 rounded-full mr-4 text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block mb-1">Secure Account</span>
+                <span className="text-gray-500 text-sm">Protected user data and personalized settings.</span>
+              </div>
+            </li>
+            <li className="flex items-start">
+              <div className="mt-1 bg-green-100 p-1 rounded-full mr-4 text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block mb-1">Weather Insights</span>
+                <span className="text-gray-500 text-sm">Smart saving tips based on local weather.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
 
       {/* Modules Grid */}
       <h2 className="text-3xl font-bold text-gray-900 mb-8 ml-1">Energy Modules</h2>
