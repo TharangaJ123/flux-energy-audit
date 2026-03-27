@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import carbonService from '../services/carbonFootprint.service';
 import Layout from '../components/Layout';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Legend, PieChart, Pie, Cell
+} from 'recharts';
 
 const GAS_TYPES = [
   { id: 'natural', label: 'Natural Gas' },
@@ -215,6 +218,7 @@ const CarbonTracker = () => {
   };
 
   const chartData = Object.values(records.reduce((acc, r) => {
+    // Grouping by year and month for the trend/bar charts
     const key = `${r.year}-${r.month}`;
     if (!acc[key]) {
       acc[key] = {
@@ -224,6 +228,7 @@ const CarbonTracker = () => {
         Gas: 0,
         Transport: 0,
         Waste: 0,
+        count: 0,
         sortKey: r.year * 100 + parseInt(r.month)
       };
     }
@@ -232,12 +237,8 @@ const CarbonTracker = () => {
 
     let gasCO2 = 0;
     if (r.gasData && r.gasData.amounts) {
-      Object.values(r.gasData.amounts).forEach(amt => {
-        // Since backend might map to different factors, we'll simplify and use a general factor if specific one isn't available
-        // But the previous logic was specific:
-        if (r.gasData.amounts.natural) gasCO2 += (parseFloat(r.gasData.amounts.natural) || 0) * EMISSION_FACTORS.naturalGas;
-        if (r.gasData.amounts.lpg) gasCO2 += (parseFloat(r.gasData.amounts.lpg) || 0) * EMISSION_FACTORS.lpg;
-      });
+      if (r.gasData.amounts.natural) gasCO2 += (parseFloat(r.gasData.amounts.natural) || 0) * EMISSION_FACTORS.naturalGas;
+      if (r.gasData.amounts.lpg) gasCO2 += (parseFloat(r.gasData.amounts.lpg) || 0) * EMISSION_FACTORS.lpg;
     }
 
     let transCO2 = 0;
@@ -256,6 +257,7 @@ const CarbonTracker = () => {
     acc[key].Gas += parseFloat(gasCO2.toFixed(1));
     acc[key].Transport += parseFloat(transCO2.toFixed(1));
     acc[key].Waste += parseFloat(wasteCO2.toFixed(1));
+    acc[key].count += 1;
 
     return acc;
   }, {})).sort((a, b) => a.sortKey - b.sortKey).map(({ sortKey, ...rest }) => ({
@@ -266,6 +268,68 @@ const CarbonTracker = () => {
     Transport: parseFloat(rest.Transport.toFixed(1)),
     Waste: parseFloat(rest.Waste.toFixed(1))
   }));
+
+  // Individual record data for the detailed breakdown
+  const individualChartData = records.map((r, index) => {
+    const elecCO2 = (parseFloat(r.electricity) || 0) * EMISSION_FACTORS.electricity;
+    let gasCO2 = 0;
+    if (r.gasData && r.gasData.amounts) {
+      if (r.gasData.amounts.natural) gasCO2 += (parseFloat(r.gasData.amounts.natural) || 0) * EMISSION_FACTORS.naturalGas;
+      if (r.gasData.amounts.lpg) gasCO2 += (parseFloat(r.gasData.amounts.lpg) || 0) * EMISSION_FACTORS.lpg;
+    }
+    let transCO2 = 0;
+    if (r.transportData && r.transportData.distances) {
+      const d = r.transportData.distances;
+      if (d.petrolCar) transCO2 += (parseFloat(d.petrolCar) || 0) * EMISSION_FACTORS.petrolCar;
+      if (d.dieselCar) transCO2 += (parseFloat(d.dieselCar) || 0) * EMISSION_FACTORS.dieselCar;
+      if (d.bus) transCO2 += (parseFloat(d.bus) || 0) * EMISSION_FACTORS.bus;
+      if (d.airplane) transCO2 += (parseFloat(d.airplane) || 0) * EMISSION_FACTORS.airplane;
+    }
+    const wasteCO2 = (parseFloat(r.waste) || 0) * EMISSION_FACTORS.waste;
+
+    return {
+      name: `#${records.length - index} (${new Date(2024, r.month - 1).toLocaleString('default', { month: 'short' })})`,
+      Electricity: parseFloat(elecCO2.toFixed(1)),
+      Gas: parseFloat(gasCO2.toFixed(1)),
+      Transport: parseFloat(transCO2.toFixed(1)),
+      Waste: parseFloat(wasteCO2.toFixed(1)),
+      total: parseFloat((r.co2Emission || 0).toFixed(1))
+    };
+  }).reverse();
+
+  const rawMax = Math.max(...individualChartData.map(d => d.total || 0), 0);
+  const maxTotal = Math.ceil((rawMax > 0 ? rawMax : 100) / 10) * 10 + 10;
+
+  const totalEmissions = records.reduce((acc, r) => {
+    const elecCO2 = (parseFloat(r.electricity) || 0) * EMISSION_FACTORS.electricity;
+    let gasCO2 = 0;
+    if (r.gasData && r.gasData.amounts) {
+      if (r.gasData.amounts.natural) gasCO2 += (parseFloat(r.gasData.amounts.natural) || 0) * EMISSION_FACTORS.naturalGas;
+      if (r.gasData.amounts.lpg) gasCO2 += (parseFloat(r.gasData.amounts.lpg) || 0) * EMISSION_FACTORS.lpg;
+    }
+    let transCO2 = 0;
+    if (r.transportData && r.transportData.distances) {
+      const d = r.transportData.distances;
+      if (d.petrolCar) transCO2 += (parseFloat(d.petrolCar) || 0) * EMISSION_FACTORS.petrolCar;
+      if (d.dieselCar) transCO2 += (parseFloat(d.dieselCar) || 0) * EMISSION_FACTORS.dieselCar;
+      if (d.bus) transCO2 += (parseFloat(d.bus) || 0) * EMISSION_FACTORS.bus;
+      if (d.airplane) transCO2 += (parseFloat(d.airplane) || 0) * EMISSION_FACTORS.airplane;
+    }
+    const wasteCO2 = (parseFloat(r.waste) || 0) * EMISSION_FACTORS.waste;
+
+    acc.Electricity += elecCO2;
+    acc.Gas += gasCO2;
+    acc.Transport += transCO2;
+    acc.Waste += wasteCO2;
+    return acc;
+  }, { Electricity: 0, Gas: 0, Transport: 0, Waste: 0 });
+
+  const pieData = [
+    { name: 'Electricity', value: parseFloat(totalEmissions.Electricity.toFixed(1)), color: '#3b82f6' },
+    { name: 'Gas', value: parseFloat(totalEmissions.Gas.toFixed(1)), color: '#f59e0b' },
+    { name: 'Transport', value: parseFloat(totalEmissions.Transport.toFixed(1)), color: '#10b981' },
+    { name: 'Waste', value: parseFloat(totalEmissions.Waste.toFixed(1)), color: '#8b5cf6' }
+  ].filter(d => d.value > 0);
 
   return (
     <Layout>
@@ -311,7 +375,7 @@ const CarbonTracker = () => {
         {activeTab === 'records' && (
           <div className="space-y-8">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Historical Footprints</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Historical Carbon Footprints</h2>
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center gap-2"
@@ -465,7 +529,7 @@ const CarbonTracker = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {records.map((record) => (
+                {records.slice().sort((a, b) => (b.year * 100 + parseInt(b.month)) - (a.year * 100 + parseInt(a.month))).map((record) => (
                   <div key={record._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-2xl hover:shadow-blue-100/50 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-500"></div>
 
@@ -581,37 +645,151 @@ const CarbonTracker = () => {
 
         {/* Breakdown Tab */}
         {activeTab === 'breakdown' && (
-          <div className="space-y-8">
+          <div className="space-y-4 animate-in fade-in duration-500">
             {loading ? (
               <div className="flex justify-center py-20"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
-            ) : (
-              <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 animate-in fade-in duration-300">
-                <h3 className="text-2xl font-extrabold mb-8 text-gray-800">Emissions Breakdown</h3>
-                {records.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">No data available for breakdown graph.</p>
-                  </div>
-                ) : (
-                  <div className="h-96 w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}kg`} />
-                        <Tooltip
-                          contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                          itemStyle={{ fontWeight: 'bold' }}
-                        />
-                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                        <Bar dataKey="Electricity" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="Gas" stackId="a" fill="#f59e0b" />
-                        <Bar dataKey="Transport" stackId="a" fill="#10b981" />
-                        <Bar dataKey="Waste" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
+            ) : records.length === 0 ? (
+              <div className="bg-white p-12 rounded-[2rem] shadow-sm border border-gray-100 text-center">
+                <p className="text-gray-500 text-lg">No data available for detailed breakdown.</p>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Pie Chart - Overall Distribution */}
+                  <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col items-center">
+                    <h3 className="text-2xl font-extrabold mb-2 text-gray-800 self-start">Emissions Distribution</h3>
+                    <p className="text-gray-400 text-sm mb-8 self-start font-medium">Global impact across all categories</p>
+                    <div className="h-72 w-full relative">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={70}
+                            outerRadius={100}
+                            paddingAngle={8}
+                            dataKey="value"
+                            animationBegin={0}
+                            animationDuration={1500}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                            formatter={(value) => [`${value} kg CO₂`, 'Emissions']}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                        <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Total</p>
+                        <p className="text-2xl font-black text-gray-900 leading-none">
+                          {records.reduce((acc, r) => acc + (r.co2Emission || 0), 0).toFixed(0)}
+                        </p>
+                        <p className="text-[10px] font-bold text-gray-400">kg</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-6 w-full">
+                      {pieData.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">{item.name}</p>
+                            <p className="text-sm font-black text-gray-800 leading-none">{item.value} <span className="text-[10px] opacity-50">kg</span></p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Summary Stats */}
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-br from-blue-400 to-blue-600 p-6 rounded-[2rem] text-white shadow-xl shadow-blue-100 h-full flex flex-col justify-center">
+                      <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-md">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      </div>
+                      <h4 className="text-3xl font-black mb-2">Impact Analysis</h4>
+                      <p className="text-blue-100 mb-8 font-medium">You have recorded <span className="font-black text-white">{records.length} footprints</span> so far. Your primary emission source is <span className="font-black text-white">{pieData.sort((a, b) => b.value - a.value)[0]?.name || 'N/A'}</span>.</p>
+
+                      <div className="space-y-4">
+                        <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10 flex justify-between items-center transition-transform hover:scale-[1.02]">
+                          <span className="text-sm font-bold">Latest Footprint</span>
+                          <span className="text-xl font-black">{records[0]?.co2Emission?.toFixed(1) || 0} kg</span>
+                        </div>
+                        <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10 flex justify-between items-center transition-transform hover:scale-[1.02]">
+                          <span className="text-sm font-bold">Monthly Average</span>
+                          <span className="text-xl font-black">{(records.reduce((acc, r) => acc + (r.co2Emission || 0), 0) / records.length).toFixed(1)} kg</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Individual Record Bar Chart */}
+                <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <h3 className="text-xl font-extrabold text-gray-800">Individual Records breakdown</h3>
+                      <p className="text-gray-400 text-sm font-medium">Viewing each recorded footprint independently</p>
+                    </div>
+                    <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm">
+                      {records.length} Records Found
+                    </div>
+                  </div>
+
+                  {/* Fixed Legend */}
+                  <div className="flex flex-wrap justify-center gap-6 mb-6 pb-4 border-b border-gray-50">
+                    {[
+                      { name: 'Electricity', color: '#3b82f6' },
+                      { name: 'Gas', color: '#f59e0b' },
+                      { name: 'Transport', color: '#10b981' },
+                      { name: 'Waste', color: '#8b5cf6' }
+                    ].map((item) => (
+                      <div key={item.name} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="relative border border-gray-100 rounded-[2rem] p-4 bg-gray-50/30">
+                    {/* Fixed Y-Axis (Custom HTML Labels) - Guaranteed Visibility */}
+                    <div className="absolute left-0 top-[20px] bottom-[45px] w-[80px] z-10 flex flex-col justify-between items-end pr-4 pointer-events-none text-[#64748b] font-medium text-[11px] bg-white">
+                      <span>{maxTotal}kg</span>
+                      <span>{Math.round(maxTotal * 0.75)}kg</span>
+                      <span>{Math.round(maxTotal * 0.5)}kg</span>
+                      <span>{Math.round(maxTotal * 0.25)}kg</span>
+                      <span>0kg</span>
+                    </div>
+
+                    {/* Scrollable Data Area */}
+                    <div className="overflow-x-auto pb-4 custom-scrollbar pl-[80px]">
+                      <div style={{ width: `${Math.max(individualChartData.length * 120, 800)}px`, height: '400px' }}>
+                        <BarChart
+                          width={Math.max(individualChartData.length * 120, 800)}
+                          height={400}
+                          data={individualChartData}
+                          margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                          <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                          <YAxis hide domain={[0, maxTotal]} />
+                          <Tooltip
+                            contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', padding: '1.5rem', zIndex: 100 }}
+                            cursor={{ fill: '#f1f5f9', radius: 10 }}
+                          />
+                          <Bar dataKey="Electricity" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={60} />
+                          <Bar dataKey="Gas" stackId="a" fill="#f59e0b" barSize={60} />
+                          <Bar dataKey="Transport" stackId="a" fill="#10b981" barSize={60} />
+                          <Bar dataKey="Waste" stackId="a" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={60} />
+                        </BarChart>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}

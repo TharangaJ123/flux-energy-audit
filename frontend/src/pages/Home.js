@@ -6,14 +6,27 @@ import carbonService from '../services/carbonFootprint.service';
 const Home = () => {
   const navigate = useNavigate();
   const [latestCarbon, setLatestCarbon] = useState(null);
+  const [monthlyAvg, setMonthlyAvg] = useState(null);
+  const [monthlyAvgStatus, setMonthlyAvgStatus] = useState(null);
 
   useEffect(() => {
     const fetchLatestCarbon = async () => {
       try {
         const records = await carbonService.getRecords();
         if (records && records.length > 0) {
-          // Assuming records are sorted by date decending
+          // Keep latest record for quick reference card behavior/tips.
           setLatestCarbon(records[0]);
+
+          // Compute monthly average CO2 across all saved records.
+          const sum = records.reduce((acc, r) => acc + (Number(r.co2Emission) || 0), 0);
+          const avg = sum / records.length;
+          setMonthlyAvg(avg);
+
+          // Reuse backend threshold rules so homepage status matches tracker.
+          let status = 'Low';
+          if (avg > 150) status = 'High';
+          else if (avg > 80) status = 'Moderate';
+          setMonthlyAvgStatus(status);
         }
       } catch (err) {
         console.error('Error fetching carbon data:', err);
@@ -152,13 +165,20 @@ const Home = () => {
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">CO₂ Emission Status</p>
-            <h4 className={`text-2xl font-bold ${latestCarbon?.status === 'High' ? 'text-red-600' : latestCarbon?.status === 'Moderate' ? 'text-amber-600' : 'text-emerald-600'}`}>
-              {latestCarbon?.status || 'No Data'}
-            </h4>
-            {latestCarbon?.status === 'Low' && (
+            {latestCarbon && monthlyAvg !== null && monthlyAvgStatus ? (
+              // Show status and average on a single line with separate font sizes.
+              <h4 className={`font-bold whitespace-nowrap ${monthlyAvgStatus === 'High' ? 'text-red-600' : monthlyAvgStatus === 'Moderate' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                <span className="text-2xl">{`${monthlyAvgStatus}`}</span>
+                <span className="text-lg">{` - ${Number(monthlyAvg).toFixed(1)} kg/mo`}</span>
+
+              </h4>
+            ) : (
+              <h4 className="text-2xl font-bold text-gray-900">No Data</h4>
+            )}
+            {monthlyAvgStatus === 'Low' && (
               <p className="text-[10px] text-emerald-500 font-bold mt-1 animate-pulse">✨ Champion: Keep using natural light!</p>
             )}
-            {latestCarbon?.status === 'Moderate' && (
+            {monthlyAvgStatus === 'Moderate' && (
               <p className="text-[10px] text-amber-500 font-bold mt-1">💡 Tip: Unplug idle electronics.</p>
             )}
           </div>
