@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { costApi } from '../services/api';
 import Layout from '../components/Layout';
 
+const CURRENT_YEAR = new Date().getFullYear();
+const MAX_ALLOWED_YEAR = CURRENT_YEAR + 1;
+const MAX_ALLOWED_COST = 1000000;
+const MAX_FUTURE_MONTHS_FOR_BILLING = 1;
+
 const CostManagement = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('costs');
@@ -10,7 +15,8 @@ const CostManagement = () => {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [editingId, setEditingId] = useState(null);
+  const [costEditingId, setCostEditingId] = useState(null);
+  const [goalEditingId, setGoalEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
   // Cost form state
@@ -43,14 +49,129 @@ const CostManagement = () => {
 
   const [estimation, setEstimation] = useState(null);
   const [estimationLoading, setEstimationLoading] = useState(false);
+  const [costFieldErrors, setCostFieldErrors] = useState({});
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState(null);
 
-  const getDocumentUrl = (documentPath) => {
-    if (!documentPath) {
+  const parseOptionalNumber = (value) => {
+    if (value === '' || value === null || value === undefined) {
+      return null;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const formatMoney = (amount) => Number(amount || 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  const isBeyondAllowedBillingWindow = ({ month, year }) => {
+    const parsedMonth = Number(month);
+    const parsedYear = Number(year);
+
+    if (!Number.isInteger(parsedMonth) || !Number.isInteger(parsedYear)) {
+      return false;
+    }
+
+    const billingDate = new Date(parsedYear, parsedMonth - 1, 1);
+    const now = new Date();
+    const maxAllowedDate = new Date(now.getFullYear(), now.getMonth() + MAX_FUTURE_MONTHS_FOR_BILLING, 1);
+    return billingDate > maxAllowedDate;
+  };
+
+  const validateCostField = (name, formValue = costForm) => {
+    const month = parseOptionalNumber(formValue.month);
+    const year = parseOptionalNumber(formValue.year);
+    const electricityCost = parseOptionalNumber(formValue.electricityCost);
+
+    if (name === 'month') {
+      if (!Number.isInteger(month) || month < 1 || month > 12) {
+        return 'Billing month must be between 1 and 12';
+      }
+      if (year !== null && isBeyondAllowedBillingWindow({ month, year })) {
+        return 'Billing month cannot be more than 1 month in the future';
+      }
       return '';
     }
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-    const serverBaseUrl = apiUrl.replace(/\/api\/?$/, '');
-    return `${serverBaseUrl}${documentPath}`;
+
+    if (name === 'year') {
+      if (!Number.isInteger(year) || year < 1900 || year > MAX_ALLOWED_YEAR) {
+        return `Year must be between 1900 and ${MAX_ALLOWED_YEAR}`;
+      }
+      if (month !== null && isBeyondAllowedBillingWindow({ month, year })) {
+        return 'Billing month cannot be more than 1 month in the future';
+      }
+      return '';
+    }
+
+    if (name === 'electricityCost') {
+      if (electricityCost === null) {
+        return 'Please enter electricity cost';
+      }
+      if (electricityCost < 0) {
+        return 'Electricity cost must be 0 or higher';
+      }
+      if (electricityCost > MAX_ALLOWED_COST) {
+        return `Electricity cost cannot exceed ${MAX_ALLOWED_COST.toLocaleString()}`;
+      }
+      return '';
+    }
+
+    return '';
+  };
+
+  const validateCostForm = (formValue = costForm) => {
+    const validationErrors = {
+      month: validateCostField('month', formValue),
+      year: validateCostField('year', formValue),
+      electricityCost: validateCostField('electricityCost', formValue),
+    };
+
+    const filteredErrors = Object.fromEntries(
+      Object.entries(validationErrors).filter(([, message]) => Boolean(message))
+    );
+
+    setCostFieldErrors(filteredErrors);
+    return {
+      isValid: Object.keys(filteredErrors).length === 0,
+      errors: filteredErrors,
+    };
+  };
+
+  const handleCostFieldBlur = (fieldName) => {
+    const errorMessage = validateCostField(fieldName, costForm);
+    setCostFieldErrors((prev) => {
+      if (!errorMessage) {
+        const { [fieldName]: removed, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [fieldName]: errorMessage,
+      };
+    });
+  };
+
+  const handleDownloadDocument = async (costId, fallbackFileName = 'bill-document') => {
+    setDownloadingDocumentId(costId);
+    setError('');
+    try {
+      const response = await costApi.downloadCostDocument(costId);
+      const blobUrl = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fallbackFileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to download bill document');
+    } finally {
+      setDownloadingDocumentId(null);
+    }
   };
 
   const fetchCosts = useCallback(async () => {
@@ -104,24 +225,40 @@ const CostManagement = () => {
   const handleAddCost = async () => {
     setError('');
     try {
-      if (!costForm.electricityCost) {
-        setError('Please enter electricity cost');
+      const validationResult = validateCostForm(costForm);
+      if (!validationResult.isValid) {
+        const firstMessage = Object.values(validationResult.errors)[0] || 'Please fix highlighted fields';
+        setError(firstMessage);
         return;
       }
 
-      if (editingId) {
-        const updatePayload = {
-          month: costForm.month,
-          year: costForm.year,
-          electricityCost: costForm.electricityCost,
-          notes: costForm.notes,
-        };
-        await costApi.updateCost(editingId, updatePayload);
+      const month = parseOptionalNumber(costForm.month);
+      const year = parseOptionalNumber(costForm.year);
+      const electricityCost = parseOptionalNumber(costForm.electricityCost);
+
+      if (costEditingId) {
+        if (costForm.document) {
+          const updateFormData = new FormData();
+          updateFormData.append('month', String(month));
+          updateFormData.append('year', String(year));
+          updateFormData.append('electricityCost', String(electricityCost));
+          updateFormData.append('notes', costForm.notes || '');
+          updateFormData.append('document', costForm.document);
+          await costApi.updateCost(costEditingId, updateFormData);
+        } else {
+          const updatePayload = {
+            month,
+            year,
+            electricityCost,
+            notes: costForm.notes,
+          };
+          await costApi.updateCost(costEditingId, updatePayload);
+        }
       } else {
         const formData = new FormData();
-        formData.append('month', String(costForm.month));
-        formData.append('year', String(costForm.year));
-        formData.append('electricityCost', String(costForm.electricityCost));
+        formData.append('month', String(month));
+        formData.append('year', String(year));
+        formData.append('electricityCost', String(electricityCost));
         formData.append('notes', costForm.notes || '');
         if (costForm.document) {
           formData.append('document', costForm.document);
@@ -136,7 +273,8 @@ const CostManagement = () => {
         notes: '',
         document: null,
       });
-      setEditingId(null);
+      setCostEditingId(null);
+      setCostFieldErrors({});
       setShowForm(false);
       await fetchCosts();
     } catch (err) {
@@ -158,14 +296,32 @@ const CostManagement = () => {
   const handleAddGoal = async () => {
     setError('');
     try {
-      if (!goalForm.goalAmount) {
-        setError('Please enter goal amount');
+      const goalAmount = parseOptionalNumber(goalForm.goalAmount);
+
+      if (goalAmount === null || goalAmount < 0) {
+        setError('Please enter a valid goal amount');
         return;
       }
-      if (editingId) {
-        await costApi.updateGoal(editingId, goalForm);
+
+      if (goalForm.year < 1900 || goalForm.year > MAX_ALLOWED_YEAR) {
+        setError(`Year must be between 1900 and ${MAX_ALLOWED_YEAR}`);
+        return;
+      }
+
+      if (goalAmount > 1000000) {
+        setError('Goal amount is too large. Please check and try again.');
+        return;
+      }
+
+      const payload = {
+        ...goalForm,
+        goalAmount,
+      };
+
+      if (goalEditingId) {
+        await costApi.updateGoal(goalEditingId, payload);
       } else {
-        await costApi.createGoal(goalForm);
+        await costApi.createGoal(payload);
       }
       setGoalForm({
         type: 'monthly',
@@ -174,7 +330,7 @@ const CostManagement = () => {
         goalAmount: '',
         notes: '',
       });
-      setEditingId(null);
+      setGoalEditingId(null);
       setShowForm(false);
       await fetchGoals();
     } catch (err) {
@@ -197,15 +353,30 @@ const CostManagement = () => {
     setEstimationLoading(true);
     setError('');
     try {
-      if (!estimationForm.units) {
-        setError('Please enter units');
+      const units = parseOptionalNumber(estimationForm.units);
+      const peakUnits = parseOptionalNumber(estimationForm.peakUnits);
+      const offPeakUnits = parseOptionalNumber(estimationForm.offPeakUnits);
+
+      if (units === null || units < 0) {
+        setError('Please enter valid usage units');
         return;
       }
+
+      if (peakUnits === null || peakUnits < 0 || offPeakUnits === null || offPeakUnits < 0) {
+        setError('Peak and off-peak units must be valid non-negative numbers');
+        return;
+      }
+
+      if (peakUnits + offPeakUnits > units) {
+        setError('Peak and off-peak units cannot exceed total units');
+        return;
+      }
+
       const response = await costApi.estimateCost({
         ...estimationForm,
-        units: parseFloat(estimationForm.units),
-        peakUnits: parseFloat(estimationForm.peakUnits),
-        offPeakUnits: parseFloat(estimationForm.offPeakUnits),
+        units,
+        peakUnits,
+        offPeakUnits,
       });
       setEstimation(response.data);
     } catch (err) {
@@ -215,10 +386,11 @@ const CostManagement = () => {
     }
   };
 
-  const MonthSelect = ({ value, onChange }) => (
+  const MonthSelect = ({ value, onChange, onBlur }) => (
     <select
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
       className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
     >
       {Array.from({ length: 12 }, (_, i) => (
@@ -266,6 +438,275 @@ const CostManagement = () => {
     );
   };
 
+  const getYearlyGoalForYear = (year) => goals.find(
+    (goal) => goal.type === 'yearly' && Number(goal.year) === Number(year)
+  );
+
+  const getApplicableGoalForCost = (cost) => {
+    const monthlyGoal = getMonthlyGoalForCost(cost);
+    if (monthlyGoal) {
+      return {
+        goal: monthlyGoal,
+        source: 'monthly',
+      };
+    }
+
+    const yearlyGoal = getYearlyGoalForYear(cost.year);
+    if (yearlyGoal) {
+      return {
+        goal: yearlyGoal,
+        source: 'yearly',
+      };
+    }
+
+    return {
+      goal: null,
+      source: null,
+    };
+  };
+
+  const startGoalEdit = (goal) => {
+    setGoalForm({
+      type: goal.type,
+      month: goal.month || (new Date().getMonth() + 1),
+      year: goal.year,
+      goalAmount: Number(goal.goalAmount || 0),
+      notes: goal.notes || '',
+    });
+    setGoalEditingId(goal._id);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const startAdjustGoalForCost = (cost) => {
+    const existingMonthlyGoal = getMonthlyGoalForCost(cost);
+
+    setGoalForm({
+      type: 'monthly',
+      month: Number(cost.month),
+      year: Number(cost.year),
+      goalAmount: existingMonthlyGoal ? Number(existingMonthlyGoal.goalAmount || 0) : Number(cost.electricityCost || 0),
+      notes: existingMonthlyGoal?.notes || '',
+    });
+
+    setGoalEditingId(existingMonthlyGoal?._id || null);
+    setActiveTab('goals');
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleUnitsChange = (rawValue) => {
+    setEstimationForm((prev) => {
+      const nextUnitsRaw = rawValue;
+      const nextUnits = parseOptionalNumber(nextUnitsRaw);
+      if (nextUnits === null || nextUnits < 0) {
+        return {
+          ...prev,
+          units: nextUnitsRaw,
+        };
+      }
+
+      let peak = parseOptionalNumber(prev.peakUnits) || 0;
+      let offPeak = parseOptionalNumber(prev.offPeakUnits) || 0;
+
+      if (peak > nextUnits) {
+        peak = nextUnits;
+      }
+      if (offPeak > nextUnits) {
+        offPeak = nextUnits;
+      }
+      if (peak + offPeak > nextUnits) {
+        offPeak = Math.max(nextUnits - peak, 0);
+      }
+
+      return {
+        ...prev,
+        units: nextUnitsRaw,
+        peakUnits: String(peak),
+        offPeakUnits: String(offPeak),
+      };
+    });
+  };
+
+  const handlePeakUnitsChange = (rawValue) => {
+    setEstimationForm((prev) => {
+      const units = Math.max(parseOptionalNumber(prev.units) || 0, 0);
+      let peak = Math.max(parseOptionalNumber(rawValue) || 0, 0);
+      peak = Math.min(peak, units);
+
+      let offPeak = Math.max(parseOptionalNumber(prev.offPeakUnits) || 0, 0);
+      if (peak + offPeak > units) {
+        offPeak = Math.max(units - peak, 0);
+      }
+
+      return {
+        ...prev,
+        peakUnits: String(peak),
+        offPeakUnits: String(offPeak),
+      };
+    });
+  };
+
+  const handleOffPeakUnitsChange = (rawValue) => {
+    setEstimationForm((prev) => {
+      const units = Math.max(parseOptionalNumber(prev.units) || 0, 0);
+      let offPeak = Math.max(parseOptionalNumber(rawValue) || 0, 0);
+      offPeak = Math.min(offPeak, units);
+
+      let peak = Math.max(parseOptionalNumber(prev.peakUnits) || 0, 0);
+      if (peak + offPeak > units) {
+        peak = Math.max(units - offPeak, 0);
+      }
+
+      return {
+        ...prev,
+        peakUnits: String(peak),
+        offPeakUnits: String(offPeak),
+      };
+    });
+  };
+
+  const sortedCosts = [...costs].sort((a, b) => {
+    if (a.year !== b.year) {
+      return b.year - a.year;
+    }
+    return b.month - a.month;
+  });
+  const totalSpent = sortedCosts.reduce((sum, cost) => sum + Number(cost.electricityCost || 0), 0);
+  const avgMonthlySpend = sortedCosts.length ? totalSpent / sortedCosts.length : 0;
+  const movingAverage3Months = sortedCosts.length
+    ? sortedCosts.slice(0, 3).reduce((sum, cost) => sum + Number(cost.electricityCost || 0), 0) / Math.min(3, sortedCosts.length)
+    : 0;
+  const highestCost = sortedCosts.reduce((max, cost) => {
+    const value = Number(cost.electricityCost || 0);
+    if (!max || value > Number(max.electricityCost || 0)) {
+      return cost;
+    }
+    return max;
+  }, null);
+  const latestCost = sortedCosts[0] || null;
+  const previousCost = sortedCosts[1] || null;
+  const momChange = latestCost && previousCost
+    ? ((Number(latestCost.electricityCost || 0) - Number(previousCost.electricityCost || 0)) / Number(previousCost.electricityCost || 1)) * 100
+    : null;
+  const peakCostIds = new Set(
+    [...sortedCosts]
+      .sort((a, b) => Number(b.electricityCost || 0) - Number(a.electricityCost || 0))
+      .slice(0, 3)
+      .map((cost) => cost._id)
+  );
+  const estimationUnits = Math.max(parseOptionalNumber(estimationForm.units) || 0, 0);
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const hasCurrentMonthBill = costs.some(
+    (cost) => Number(cost.month) === currentMonth && Number(cost.year) === currentYear
+  );
+
+  const openLogCurrentMonth = () => {
+    setActiveTab('costs');
+    setCostEditingId(null);
+    setCostFieldErrors({});
+    setCostForm({
+      month: currentMonth,
+      year: currentYear,
+      electricityCost: '',
+      notes: '',
+      document: null,
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const exportCostsCsv = () => {
+    if (!sortedCosts.length) {
+      setError('No cost records available to export');
+      return;
+    }
+
+    const headers = ['Month', 'Year', 'ElectricityCostLKR', 'Notes'];
+    const rows = sortedCosts.map((cost) => [
+      Number(cost.month),
+      Number(cost.year),
+      Number(cost.electricityCost || 0).toFixed(2),
+      (cost.notes || '').replace(/\n/g, ' ').replace(/,/g, ';'),
+    ]);
+
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cost-summary-${currentYear}-${String(currentMonth).padStart(2, '0')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportSummaryPdf = () => {
+    if (!sortedCosts.length) {
+      setError('No cost records available to export');
+      return;
+    }
+
+    const monthName = new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' });
+    const rows = sortedCosts.slice(0, 12).map((cost) => {
+      const label = `${new Date(2024, Number(cost.month) - 1).toLocaleString('default', { month: 'short' })} ${cost.year}`;
+      return `<tr><td style="padding:8px;border:1px solid #ddd;">${label}</td><td style="padding:8px;border:1px solid #ddd;text-align:right;">${formatMoney(cost.electricityCost)}</td><td style="padding:8px;border:1px solid #ddd;">${(cost.notes || '-').replace(/</g, '&lt;')}</td></tr>`;
+    }).join('');
+
+    const popup = window.open('', '_blank', 'width=900,height=700');
+    if (!popup) {
+      setError('Unable to open print window. Please allow pop-ups and try again.');
+      return;
+    }
+
+    popup.document.write(`
+      <html>
+        <head>
+          <title>Cost Summary</title>
+          <style>
+            body { font-family: Segoe UI, Arial, sans-serif; padding: 24px; color: #111827; }
+            h1 { margin: 0 0 8px; }
+            p { margin: 4px 0; color: #4b5563; }
+            .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+            .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+            .card .label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: .08em; }
+            .card .value { margin-top: 6px; font-size: 20px; font-weight: 700; }
+            table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+            th { text-align: left; padding: 8px; border: 1px solid #ddd; background: #f8fafc; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <h1>Electricity Cost Summary</h1>
+          <p>Generated: ${new Date().toLocaleString()}</p>
+          <p>Current Month Status: ${hasCurrentMonthBill ? `Logged for ${monthName} ${currentYear}` : `Not logged for ${monthName} ${currentYear}`}</p>
+          <div class="cards">
+            <div class="card"><div class="label">Total Spent</div><div class="value">Rs. ${formatMoney(totalSpent)}</div></div>
+            <div class="card"><div class="label">Monthly Average</div><div class="value">Rs. ${formatMoney(avgMonthlySpend)}</div></div>
+            <div class="card"><div class="label">3-Month Moving Avg</div><div class="value">Rs. ${formatMoney(movingAverage3Months)}</div></div>
+          </div>
+          <h2>Latest Records</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th style="text-align:right;">Amount (LKR)</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <script>
+            window.onload = function () { window.print(); };
+          </script>
+        </body>
+      </html>
+    `);
+    popup.document.close();
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto py-8 px-4">
@@ -306,35 +747,124 @@ const CostManagement = () => {
         {/* Costs View */}
         {activeTab === 'costs' && (
           <div className="space-y-8">
+            {!loading && !hasCurrentMonthBill && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black uppercase tracking-wide">Recurring Reminder</p>
+                  <p className="text-sm font-semibold">You have not logged a bill for this month yet.</p>
+                </div>
+                <button
+                  onClick={openLogCurrentMonth}
+                  className="px-4 py-2 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 font-black"
+                >
+                  Log This Month Bill
+                </button>
+              </div>
+            )}
+
+            {costs.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-xs uppercase tracking-widest text-gray-400 font-black">Total Spent</p>
+                  <p className="text-2xl font-black text-gray-900 mt-2">Rs. {formatMoney(totalSpent)}</p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-xs uppercase tracking-widest text-gray-400 font-black">Monthly Average</p>
+                  <p className="text-2xl font-black text-gray-900 mt-2">Rs. {formatMoney(avgMonthlySpend)}</p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-xs uppercase tracking-widest text-gray-400 font-black">Highest Bill</p>
+                  <p className="text-2xl font-black text-gray-900 mt-2">Rs. {formatMoney(highestCost?.electricityCost || 0)}</p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-xs uppercase tracking-widest text-gray-400 font-black">MoM Change</p>
+                  <p className={`text-2xl font-black mt-2 ${momChange === null ? 'text-gray-500' : momChange >= 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    {momChange === null ? 'N/A' : `${momChange >= 0 ? '+' : ''}${momChange.toFixed(1)}%`}
+                  </p>
+                </div>
+                <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+                  <p className="text-xs uppercase tracking-widest text-gray-400 font-black">3-Month Moving Avg</p>
+                  <p className="text-2xl font-black text-gray-900 mt-2">Rs. {formatMoney(movingAverage3Months)}</p>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Historical Costs</h2>
-              <button
-                onClick={() => setShowForm(!showForm)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center gap-2"
-              >
-                {showForm ? '✕ Cancel' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Log Bill</>}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={exportCostsCsv}
+                  className="bg-gray-100 text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  Export CSV
+                </button>
+                <button
+                  onClick={exportSummaryPdf}
+                  className="bg-gray-100 text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  PDF Summary
+                </button>
+                <button
+                  onClick={() => {
+                    if (showForm) {
+                      setCostEditingId(null);
+                      setCostForm({
+                        month: new Date().getMonth() + 1,
+                        year: new Date().getFullYear(),
+                        electricityCost: '',
+                        notes: '',
+                        document: null,
+                      });
+                      setCostFieldErrors({});
+                    }
+                    setShowForm(!showForm);
+                  }}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center gap-2"
+                >
+                  {showForm ? '✕ Cancel' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Log Bill</>}
+                </button>
+              </div>
             </div>
 
             {showForm && (
               <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-gray-100 animate-in zoom-in-95 duration-300">
-                <h3 className="text-xl font-bold mb-6">{editingId ? 'Edit Bill Record' : 'Log New Bill'}</h3>
+                <h3 className="text-xl font-bold mb-6">{costEditingId ? 'Edit Bill Record' : 'Log New Bill'}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Billing Month</label>
                     <MonthSelect
                       value={costForm.month}
-                      onChange={(e) => setCostForm({ ...costForm, month: parseInt(e.target.value) })}
+                      onChange={(e) => {
+                        setCostForm({ ...costForm, month: parseInt(e.target.value, 10) });
+                        setCostFieldErrors((prev) => {
+                          const { month: removed, ...rest } = prev;
+                          return rest;
+                        });
+                      }}
+                      onBlur={() => handleCostFieldBlur('month')}
                     />
+                    {costFieldErrors.month && (
+                      <p className="text-xs text-red-600 mt-2 ml-1">{costFieldErrors.month}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Year</label>
                     <input
                       type="number"
                       value={costForm.year}
-                      onChange={(e) => setCostForm({ ...costForm, year: parseInt(e.target.value) })}
+                      onChange={(e) => {
+                        setCostForm({ ...costForm, year: e.target.value });
+                        setCostFieldErrors((prev) => {
+                          const { year: removed, ...rest } = prev;
+                          return rest;
+                        });
+                      }}
+                      onBlur={() => handleCostFieldBlur('year')}
                       className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                     />
+                    {costFieldErrors.year && (
+                      <p className="text-xs text-red-600 mt-2 ml-1">{costFieldErrors.year}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Amount (LKR)</label>
@@ -344,11 +874,21 @@ const CostManagement = () => {
                         type="number"
                         step="0.01"
                         value={costForm.electricityCost}
-                        onChange={(e) => setCostForm({ ...costForm, electricityCost: parseFloat(e.target.value) })}
+                        onChange={(e) => {
+                          setCostForm({ ...costForm, electricityCost: e.target.value });
+                          setCostFieldErrors((prev) => {
+                            const { electricityCost: removed, ...rest } = prev;
+                            return rest;
+                          });
+                        }}
+                        onBlur={() => handleCostFieldBlur('electricityCost')}
                         placeholder="0.00"
                         className="w-full pl-12 pr-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-lg"
                       />
                     </div>
+                    {costFieldErrors.electricityCost && (
+                      <p className="text-xs text-red-600 mt-2 ml-1">{costFieldErrors.electricityCost}</p>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Optional Notes</label>
@@ -360,9 +900,23 @@ const CostManagement = () => {
                       className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                     />
                   </div>
-                  {!editingId && (
+                  {!costEditingId && (
                     <div className="md:col-span-2">
                       <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Optional Bill Document</label>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"
+                        onChange={(e) => setCostForm({ ...costForm, document: e.target.files?.[0] || null })}
+                        className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium file:mr-4 file:rounded-lg file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:font-bold file:text-blue-700"
+                      />
+                      {costForm.document && (
+                        <p className="text-xs text-gray-500 mt-2">Selected: {costForm.document.name}</p>
+                      )}
+                    </div>
+                  )}
+                  {costEditingId && (
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Replace Bill Document (Optional)</label>
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.jpg,.jpeg,.png,.webp"
@@ -380,7 +934,7 @@ const CostManagement = () => {
                     onClick={handleAddCost}
                     className="bg-blue-600 text-white px-8 py-3 rounded-xl font-extrabold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
                   >
-                    {editingId ? 'Apply Changes' : 'Save Record'}
+                    {costEditingId ? 'Apply Changes' : 'Save Record'}
                   </button>
                 </div>
               </div>
@@ -399,42 +953,66 @@ const CostManagement = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {costs.map((cost) => {
-                  const monthlyGoal = getMonthlyGoalForCost(cost);
+                  const applicableGoal = getApplicableGoalForCost(cost);
                   const monthlyGoalExceedsCost =
-                    Boolean(monthlyGoal) && Number(monthlyGoal.goalAmount || 0) > Number(cost.electricityCost || 0);
+                    Boolean(applicableGoal.goal) && Number(applicableGoal.goal.goalAmount || 0) > Number(cost.electricityCost || 0);
+                  const isPeakMonth = peakCostIds.has(cost._id);
 
                   return (
                   <div key={cost._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-lg uppercase">
-                        {new Date(2024, cost.month - 1).toLocaleString('default', { month: 'short' })} {cost.year}
+                      <div className="flex items-center gap-2">
+                        <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-lg uppercase">
+                          {new Date(2024, cost.month - 1).toLocaleString('default', { month: 'short' })} {cost.year}
+                        </div>
+                        {isPeakMonth && (
+                          <span className="px-2 py-1 text-[10px] font-black rounded-md bg-rose-100 text-rose-700 uppercase">Peak Month</span>
+                        )}
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setCostForm({ ...cost, document: null }); setEditingId(cost._id); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                        <button onClick={() => { setCostForm({ ...cost, document: null }); setCostEditingId(cost._id); setCostFieldErrors({}); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                         <button onClick={() => handleDeleteCost(cost._id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                       </div>
                     </div>
                     <p className="text-4xl font-black text-gray-900 mb-2">
                       <span className="text-lg font-bold text-gray-400 mr-1">Rs.</span>
-                      {cost.electricityCost.toLocaleString()}
+                      {formatMoney(cost.electricityCost)}
                     </p>
                     {monthlyGoalExceedsCost && (
                       <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
                         </svg>
-                        Warning: Monthly goal exceeds this bill amount.
+                        <span>
+                          Warning: {applicableGoal.source === 'yearly' ? 'Yearly fallback goal' : 'Monthly goal'} exceeds this bill amount.
+                        </span>
+                        <button
+                          onClick={() => startAdjustGoalForCost(cost)}
+                          className="ml-auto px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs"
+                        >
+                          Adjust Goal
+                        </button>
                       </div>
                     )}
+                    {applicableGoal.source === 'yearly' && (
+                      <p className="text-xs text-emerald-600 font-semibold mt-2">Using yearly goal as fallback (monthly goal has priority when available).</p>
+                    )}
                     {cost.document?.path && (
-                      <a
-                        href={getDocumentUrl(cost.document.path)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700 mt-2"
+                      <button
+                        onClick={() => handleDownloadDocument(cost._id, cost.document.originalName || `bill-${cost.month}-${cost.year}`)}
+                        aria-label="Download bill document"
+                        title="Download bill document"
+                        className="mt-3 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 shadow-sm transition-all hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100"
                       >
-                        View uploaded document
-                      </a>
+                        <svg
+                          className={`w-5 h-5 ${downloadingDocumentId === cost._id ? 'animate-pulse' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M8 4h5l5 5v9a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                        </svg>
+                      </button>
                     )}
                     {cost.notes && <p className="text-gray-500 text-sm line-clamp-2 mt-4">{cost.notes}</p>}
                   </div>
@@ -450,7 +1028,19 @@ const CostManagement = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Saving Goals</h2>
               <button
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => {
+                  if (showForm) {
+                    setGoalEditingId(null);
+                    setGoalForm({
+                      type: 'monthly',
+                      month: new Date().getMonth() + 1,
+                      year: new Date().getFullYear(),
+                      goalAmount: '',
+                      notes: '',
+                    });
+                  }
+                  setShowForm(!showForm);
+                }}
                 className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center gap-2"
               >
                 {showForm ? '✕ Cancel' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Set Budget</>}
@@ -459,7 +1049,7 @@ const CostManagement = () => {
 
             {showForm && (
               <div className="bg-white p-8 rounded-[2rem] shadow-xl border border-gray-100">
-                <h3 className="text-xl font-bold mb-6">Create Energy Budget</h3>
+                <h3 className="text-xl font-bold mb-6">{goalEditingId ? 'Edit Energy Budget' : 'Create Energy Budget'}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Budget Period</label>
@@ -496,7 +1086,7 @@ const CostManagement = () => {
                       type="number"
                       step="0.01"
                       value={goalForm.goalAmount}
-                      onChange={(e) => setGoalForm({ ...goalForm, goalAmount: parseFloat(e.target.value) })}
+                      onChange={(e) => setGoalForm({ ...goalForm, goalAmount: e.target.value })}
                       placeholder="0.00"
                       className="w-full px-4 py-3 bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-xl outline-none font-black text-lg"
                     />
@@ -509,12 +1099,22 @@ const CostManagement = () => {
                       </div>
                     )}
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Notes</label>
+                    <textarea
+                      value={goalForm.notes}
+                      onChange={(e) => setGoalForm({ ...goalForm, notes: e.target.value })}
+                      placeholder="Optional budget note"
+                      rows="2"
+                      className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-medium"
+                    />
+                  </div>
                 </div>
                 <button
                   onClick={handleAddGoal}
                   className="mt-8 bg-emerald-600 text-white px-10 py-4 rounded-xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100"
                 >
-                  Set Budget Limit
+                  {goalEditingId ? 'Update Budget Limit' : 'Set Budget Limit'}
                 </button>
               </div>
             )}
@@ -536,14 +1136,17 @@ const CostManagement = () => {
                         {goal.type === 'monthly' ? `${new Date(2024, goal.month - 1).toLocaleString('default', { month: 'long' })}` : goal.year}
                       </h3>
                     </div>
-                    <button onClick={() => handleDeleteGoal(goal._id)} className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => startGoalEdit(goal)} className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                      <button onClick={() => handleDeleteGoal(goal._id)} className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <p className="text-gray-400 font-bold text-sm uppercase">Budget Limit</p>
-                    <p className="text-5xl font-black text-gray-900 italic">Rs. {goal.goalAmount.toLocaleString()}</p>
+                    <p className="text-5xl font-black text-gray-900 italic">Rs. {formatMoney(goal.goalAmount)}</p>
                     {hasBillData && (
                       <p className="text-sm font-semibold text-gray-600 pt-1">
-                        Related Bill Amount: Rs. {billAmount.toLocaleString()}
+                        Related Bill Amount: Rs. {formatMoney(billAmount)}
                       </p>
                     )}
                     {monthlyGoalExceedsBill && (
@@ -552,8 +1155,33 @@ const CostManagement = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
                         </svg>
                         Warning: Monthly goal exceeds the bill amount.
+                        <button
+                          onClick={() => startGoalEdit(goal)}
+                          className="ml-auto px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs"
+                        >
+                          Adjust Goal
+                        </button>
                       </div>
                     )}
+                    {goal.type === 'yearly' && (
+                      <p className="text-xs text-emerald-600 font-semibold pt-1">Priority rule: monthly goals override this yearly goal for matching months.</p>
+                    )}
+                    {goalAmount > 0 && hasBillData && (
+                      <div className="pt-2">
+                        <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
+                          <span>Goal Progress</span>
+                          <span>{Math.min((billAmount / goalAmount) * 100, 999).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                          <div
+                            className={`h-full ${billAmount > goalAmount ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${Math.min((billAmount / goalAmount) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Actual: Rs. {formatMoney(billAmount)} / Target: Rs. {formatMoney(goalAmount)}</p>
+                      </div>
+                    )}
+                    {goal.notes && <p className="text-gray-500 text-sm pt-2">{goal.notes}</p>}
                   </div>
                 </div>
               )})}
@@ -580,10 +1208,46 @@ const CostManagement = () => {
                   <input
                     type="number"
                     value={estimationForm.units}
-                    onChange={(e) => setEstimationForm({ ...estimationForm, units: e.target.value })}
+                    onChange={(e) => handleUnitsChange(e.target.value)}
                     placeholder="Enter kWh usage"
                     className="w-full px-6 py-5 bg-gray-50 border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-black text-2xl placeholder:text-gray-200"
                   />
+                </div>
+
+                <div className="space-y-4 rounded-2xl bg-gray-50 p-5 border border-gray-100">
+                  <div>
+                    <div className="flex justify-between text-sm font-bold text-gray-700 mb-2">
+                      <span>Peak Units</span>
+                      <span>{Math.max(parseOptionalNumber(estimationForm.peakUnits) || 0, 0).toFixed(0)} kWh</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={estimationUnits}
+                      step="1"
+                      value={Math.max(parseOptionalNumber(estimationForm.peakUnits) || 0, 0)}
+                      onChange={(e) => handlePeakUnitsChange(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm font-bold text-gray-700 mb-2">
+                      <span>Off-Peak Units</span>
+                      <span>{Math.max(parseOptionalNumber(estimationForm.offPeakUnits) || 0, 0).toFixed(0)} kWh</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={estimationUnits}
+                      step="1"
+                      value={Math.max(parseOptionalNumber(estimationForm.offPeakUnits) || 0, 0)}
+                      onChange={(e) => handleOffPeakUnitsChange(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 font-semibold">
+                    TOU allocation: {(Math.max(parseOptionalNumber(estimationForm.peakUnits) || 0, 0) + Math.max(parseOptionalNumber(estimationForm.offPeakUnits) || 0, 0)).toFixed(0)} / {estimationUnits.toFixed(0)} units
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -627,6 +1291,10 @@ const CostManagement = () => {
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                       Calculated with current {estimation.provider} tariff slabs.
                     </div>
+                    <div className="mt-2 text-xs text-blue-100 font-semibold">
+                      Estimation confidence: {estimation.tariffVersion?.confidence || 'unknown'} | Source: {estimation.source}
+                      {estimation.tariffVersion?.effectiveFrom ? ` | Effective from: ${estimation.tariffVersion.effectiveFrom}` : ''}
+                    </div>
                   </div>
 
                   <div className="bg-white p-10 rounded-[2.5rem] shadow-lg border border-gray-100">
@@ -641,6 +1309,14 @@ const CostManagement = () => {
                         <span className="font-black">Rs. {estimation.summary.fixedCharge.toFixed(2)}</span>
                       </div>
                       <div className="h-px bg-gray-100"></div>
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="text-gray-500 font-medium">Peak TOU Charge</span>
+                        <span className="font-black">Rs. {estimation.summary.peakCharge.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="text-gray-500 font-medium">Off-Peak TOU Charge</span>
+                        <span className="font-black">Rs. {estimation.summary.offPeakCharge.toFixed(2)}</span>
+                      </div>
                       <div className="flex justify-between items-center text-2xl">
                         <span className="text-gray-900 font-black">Subtotal</span>
                         <span className="font-black">Rs. {estimation.summary.subTotal.toFixed(2)}</span>

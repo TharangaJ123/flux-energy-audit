@@ -2,7 +2,6 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const dns = require('dns');
-const path = require('path');
 
 // Set DNS servers to resolve MongoDB SRV records
 dns.setServers(['8.8.8.8', '8.8.4.4']);
@@ -20,7 +19,6 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 const userRoutes = require('./routes/userManagement.route');
 const energyAuditRoutes = require('./routes/energyAuditManagement.route');

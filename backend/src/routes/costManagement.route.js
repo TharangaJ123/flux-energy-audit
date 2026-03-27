@@ -230,6 +230,9 @@ router.get('/', protect, costController.list);
 // Estimate tariff-based electricity bill.
 router.post('/estimate', protect, costController.estimate);
 
+// Download a bill document through authenticated access.
+router.get('/:id/document', protect, costController.downloadDocument);
+
 /**
  * @swagger
  * /api/costs/{id}:
@@ -471,7 +474,7 @@ router.get('/:id', protect, costController.getById);
  *         description: Cost not found
  */
 // Update electricity cost by id.
-router.put('/:id', protect, costController.update);
+router.put('/:id', protect, handleBillUpload, costController.update);
 
 /**
  * @swagger
