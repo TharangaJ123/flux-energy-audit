@@ -5,57 +5,141 @@ const tariffApiService = require('./tariffApiService');
 // Electricity cost business logic.
 
 const tariffPlans = {
-    CEB: {
-        slabs: [
-            { from: 1, to: 30, ratePerUnit: 8 },
-            { from: 31, to: 60, ratePerUnit: 12 },
-            { from: 61, to: 90, ratePerUnit: 20 },
-            { from: 91, to: Infinity, ratePerUnit: 30 },
-        ],
-        fixedCharge: 400,
-        peakRate: 36,
-        offPeakRate: 24,
-        taxRate: 0.18,
-    },
-    LECO: {
-        slabs: [
-            { from: 1, to: 30, ratePerUnit: 9 },
-            { from: 31, to: 60, ratePerUnit: 13 },
-            { from: 61, to: 90, ratePerUnit: 21 },
-            { from: 91, to: Infinity, ratePerUnit: 31 },
-        ],
-        fixedCharge: 450,
-        peakRate: 37,
-        offPeakRate: 25,
-        taxRate: 0.18,
-    },
+    CEB: [
+        {
+            effectiveFrom: '2024-01-01',
+            plan: {
+                slabs: [
+                    { from: 1, to: 30, ratePerUnit: 8 },
+                    { from: 31, to: 60, ratePerUnit: 12 },
+                    { from: 61, to: 90, ratePerUnit: 20 },
+                    { from: 91, to: Infinity, ratePerUnit: 30 },
+                ],
+                fixedCharge: 400,
+                peakRate: 36,
+                offPeakRate: 24,
+                taxRate: 0.18,
+            },
+        },
+        {
+            effectiveFrom: '2025-01-01',
+            plan: {
+                slabs: [
+                    { from: 1, to: 30, ratePerUnit: 8.5 },
+                    { from: 31, to: 60, ratePerUnit: 12.5 },
+                    { from: 61, to: 90, ratePerUnit: 20.5 },
+                    { from: 91, to: Infinity, ratePerUnit: 30.5 },
+                ],
+                fixedCharge: 420,
+                peakRate: 37,
+                offPeakRate: 25,
+                taxRate: 0.18,
+            },
+        },
+    ],
+    LECO: [
+        {
+            effectiveFrom: '2024-01-01',
+            plan: {
+                slabs: [
+                    { from: 1, to: 30, ratePerUnit: 9 },
+                    { from: 31, to: 60, ratePerUnit: 13 },
+                    { from: 61, to: 90, ratePerUnit: 21 },
+                    { from: 91, to: Infinity, ratePerUnit: 31 },
+                ],
+                fixedCharge: 450,
+                peakRate: 37,
+                offPeakRate: 25,
+                taxRate: 0.18,
+            },
+        },
+        {
+            effectiveFrom: '2025-01-01',
+            plan: {
+                slabs: [
+                    { from: 1, to: 30, ratePerUnit: 9.5 },
+                    { from: 31, to: 60, ratePerUnit: 13.5 },
+                    { from: 61, to: 90, ratePerUnit: 21.5 },
+                    { from: 91, to: Infinity, ratePerUnit: 31.5 },
+                ],
+                fixedCharge: 470,
+                peakRate: 38,
+                offPeakRate: 26,
+                taxRate: 0.18,
+            },
+        },
+    ],
 };
 
 const roundAmount = (value) => Number(value.toFixed(2));
+const MAX_FUTURE_MONTHS_FOR_BILLING = 1;
+
+const isBeyondAllowedBillingWindow = ({ month, year }) => {
+    const billingDate = new Date(year, month - 1, 1);
+    const now = new Date();
+    const maxAllowedDate = new Date(now.getFullYear(), now.getMonth() + MAX_FUTURE_MONTHS_FOR_BILLING, 1);
+    return billingDate > maxAllowedDate;
+};
 
 const shouldUseExternalTariff = () => process.env.USE_TARIFF_API === 'true' || !!process.env.TARIFF_API_URL;
 
-const getTariffPlan = async ({ provider, month, year }) => {
-    const localPlan = tariffPlans[provider];
-    if (!localPlan) {
-        throw new Error('Unsupported provider');
+const pickVersionedLocalTariff = ({ provider, month, year }) => {
+    const versions = tariffPlans[provider];
+    if (!versions || !versions.length) {
+        return null;
     }
 
+    const targetYear = year || new Date().getFullYear();
+    const targetMonth = month || new Date().getMonth() + 1;
+    const targetDate = new Date(targetYear, targetMonth - 1, 1);
+
+    const sorted = [...versions].sort((a, b) => new Date(a.effectiveFrom) - new Date(b.effectiveFrom));
+    let selected = sorted[0];
+
+    for (const version of sorted) {
+        if (new Date(version.effectiveFrom) <= targetDate) {
+            selected = version;
+        }
+    }
+
+    return selected;
+};
+
+const getTariffPlan = async ({ provider, month, year }) => {
+    const localTariffVersion = pickVersionedLocalTariff({ provider, month, year });
+    if (!localTariffVersion) {
+        throw new Error('Unsupported provider');
+    }
+    const localPlan = localTariffVersion.plan;
+    const localEffectiveFrom = localTariffVersion.effectiveFrom;
+
     if (!shouldUseExternalTariff()) {
-        return { plan: localPlan, source: 'local' };
+        return {
+            plan: localPlan,
+            source: 'local',
+            effectiveFrom: localEffectiveFrom,
+        };
     }
 
     try {
         const externalPlan = await tariffApiService.fetchTariffPlan({ provider, month, year });
-        return { plan: externalPlan, source: 'external' };
+        return {
+            plan: externalPlan,
+            source: 'external',
+            effectiveFrom: externalPlan.effectiveFrom || null,
+        };
     } catch (error) {
-        return { plan: localPlan, source: 'local_fallback' };
+        return {
+            plan: localPlan,
+            source: 'local_fallback',
+            effectiveFrom: localEffectiveFrom,
+        };
     }
 };
 
 // Estimate electricity bill from tariff slabs and TOU rates.
 const estimateCostByTariff = async ({ units, month, year, provider, peakUnits = 0, offPeakUnits = 0 }) => {
-    const { plan, source } = await getTariffPlan({ provider, month, year });
+    const { plan, source, effectiveFrom } = await getTariffPlan({ provider, month, year });
 
     if (peakUnits + offPeakUnits > units) {
         throw new Error('Peak and off-peak units cannot exceed total units');
@@ -128,6 +212,10 @@ const estimateCostByTariff = async ({ units, month, year, provider, peakUnits = 
         year,
         provider,
         source,
+        tariffVersion: {
+            effectiveFrom,
+            confidence: source === 'external' ? 'high' : source === 'local' ? 'medium' : 'low',
+        },
         units: roundAmount(units),
         estimatedBill: roundAmount(estimatedBill),
         summary: {
@@ -147,6 +235,10 @@ const createCost = async (userId, costData) => {
     return await runInTransaction(async (session) => {
         const { month, year } = costData;
 
+        if (isBeyondAllowedBillingWindow({ month, year })) {
+            throw new Error('Billing month cannot be more than 1 month in the future');
+        }
+
         const existing = await ElectricityCost.findOne({ user: userId, month, year }).session(session);
         if (existing) {
             throw new Error('Cost for this month already exists');
@@ -158,6 +250,7 @@ const createCost = async (userId, costData) => {
             year,
             electricityCost: costData.electricityCost,
             notes: costData.notes,
+            document: costData.document,
         });
 
         await cost.save({ session });
@@ -191,6 +284,10 @@ const updateCost = async (userId, costId, updateData) => {
         const newMonth = updateData.month ?? cost.month;
         const newYear = updateData.year ?? cost.year;
 
+        if (isBeyondAllowedBillingWindow({ month: newMonth, year: newYear })) {
+            throw new Error('Billing month cannot be more than 1 month in the future');
+        }
+
         if (newMonth !== cost.month || newYear !== cost.year) {
             const existing = await ElectricityCost.findOne({
                 user: userId,
@@ -204,13 +301,19 @@ const updateCost = async (userId, costId, updateData) => {
             }
         }
 
+        const replacedDocumentPath = updateData.document ? cost.document?.path || null : null;
+
         if (updateData.month !== undefined) cost.month = updateData.month;
         if (updateData.year !== undefined) cost.year = updateData.year;
         if (updateData.electricityCost !== undefined) cost.electricityCost = updateData.electricityCost;
         if (updateData.notes !== undefined) cost.notes = updateData.notes;
+        if (updateData.document !== undefined) cost.document = updateData.document;
 
         const updated = await cost.save({ session });
-        return updated;
+        return {
+            updatedCost: updated,
+            replacedDocumentPath,
+        };
     });
 };
 
@@ -223,8 +326,13 @@ const deleteCost = async (userId, costId) => {
             throw new Error('Cost not found');
         }
 
+        const documentPath = cost.document?.path || null;
+
         await cost.deleteOne({ session });
-        return { message: 'Cost removed' };
+        return {
+            message: 'Cost removed',
+            documentPath,
+        };
     });
 };
 
