@@ -230,10 +230,10 @@ const EnergyAuditManagement = () => {
                                         <div
                                             key={audit._id}
                                             onClick={() => { setActiveAudit(audit); setShowForm(false); setActiveTab('summary'); }}
-                                            className={`p-4 rounded-2xl cursor-pointer transition-all border group ${activeAudit?._id === audit._id ? 'bg-teal-50 border-teal-200' : 'bg-gray-50 border-transparent hover:bg-white hover:border-gray-100'}`}
+                                            className={`p-5 rounded-2xl cursor-pointer transition-all border group h-32 flex flex-col justify-between ${activeAudit?._id === audit._id ? 'bg-teal-50 border-teal-200 shadow-inner scale-[1.02]' : 'bg-gray-50 border-transparent hover:bg-white hover:border-gray-100'}`}
                                         >
-                                            <div className="flex justify-between items-start mb-1">
-                                                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider font-asap">{formatMonth(audit.month)} {new Date(audit.createdAt).getFullYear()}</span>
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider font-asap leading-tight">{formatMonth(audit.month)}<br/>{new Date(audit.createdAt).getFullYear()}</span>
                                                 <div className="flex gap-2">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); setActiveAudit(audit); startEditing(); }} 
@@ -349,10 +349,28 @@ const EnergyAuditManagement = () => {
                                                     </h3>
                                                     <p className="text-gray-300 font-bold mb-4 uppercase tracking-widest text-[10px] underline decoration-teal-600 decoration-2 font-asap">Score</p>
                                                 </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {activeAudit.badges?.map((badge, idx) => (
-                                                        <span key={idx} className="px-4 py-2 bg-white text-teal-700 text-[9px] font-bold rounded-xl border border-teal-100 shadow-sm uppercase tracking-widest font-asap">🏆 {badge}</span>
-                                                    ))}
+                                                <div className="flex flex-wrap gap-4">
+                                                    {activeAudit.badges?.map((badge, idx) => {
+                                                        const text = badge.toLowerCase();
+                                                        let style = { bg: 'bg-cyan-50', border: 'border-cyan-100', text: 'text-cyan-700', iconBg: 'bg-cyan-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> };
+                                                        
+                                                        if (text.includes('hog') || text.includes('urgent') || text.includes('high') || text.includes('extreme')) {
+                                                            style = { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-700', iconBg: 'bg-rose-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> };
+                                                        } else if (text.includes('elite') || text.includes('efficient') || text.includes('star') || text.includes('savings')) {
+                                                            style = { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700', iconBg: 'bg-emerald-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg> };
+                                                        } else if (text.includes('optimize') || text.includes('potential') || text.includes('check')) {
+                                                            style = { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', iconBg: 'bg-amber-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> };
+                                                        }
+
+                                                        return (
+                                                            <div key={idx} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all duration-500 shadow-sm hover:shadow-md ${style.bg} ${style.border} ${style.text}`}>
+                                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:rotate-12 text-white ${style.iconBg}`}>
+                                                                    {style.icon}
+                                                                </div>
+                                                                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{badge}</span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                             <div className="p-12 flex flex-col justify-center">
