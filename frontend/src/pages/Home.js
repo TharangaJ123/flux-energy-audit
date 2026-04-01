@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, 
+    Tooltip, ResponsiveContainer, defs, linearGradient, stop 
+} from 'recharts';
 import Layout from '../components/Layout';
 import carbonService from '../services/carbonFootprint.service';
 
@@ -30,6 +34,21 @@ const Home = () => {
         };
         fetchLatestCarbon();
     }, []);
+
+    // Mock Sri Lanka Grid Load Data (MW)
+    const slGridData = [
+        { time: '00:00', load: 1400 },
+        { time: '03:00', load: 1350 },
+        { time: '06:00', load: 1700 },
+        { time: '08:00', load: 1950 },
+        { time: '10:00', load: 2100 },
+        { time: '12:00', load: 2250 },
+        { time: '15:00', load: 2150 },
+        { time: '18:00', load: 2400 },
+        { time: '19:30', load: 2850 }, // Night Peak
+        { time: '21:00', load: 2600 },
+        { time: '23:00', load: 1800 },
+    ];
 
     const features = [
         {
@@ -159,10 +178,61 @@ const Home = () => {
                     </div>
                 </section>
 
+                {/* National Perspective: SL Grid Pulse */}
+                <section className="section-padding relative z-10 bg-white">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 items-center">
+                            <div className="lg:col-span-1">
+                                <h2 className="text-4xl font-bold text-gray-900 mb-8 leading-tight">National <span className="text-teal-600 italic">Grid Pulse</span></h2>
+                                <p className="text-lg text-gray-500 mb-10 leading-relaxed italic">
+                                    Real-time tracking of Sri Lanka's energy demand. Understanding national peak hours helps you plan your pulse for maximum saving.
+                                </p>
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-3 h-3 bg-rose-500 rounded-full animate-ping"></div>
+                                        <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Night Peak: 18:30 - 22:00</p>
+                                    </div>
+                                    <div className="p-8 bg-teal-50/30 rounded-[2rem] border border-teal-100">
+                                        <p className="text-teal-700 font-bold italic shadow-white text-shadow-sm">"Shifting load to off-peak hours can reduce your bill by up to 15% through slab optimization."</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="lg:col-span-2 h-[450px] bg-dim rounded-[3.5rem] p-10 shadow-premium border border-gray-50">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] mb-8 text-center">Sri Lankan Energy Demand (Average Day in MW)</p>
+                                <ResponsiveContainer width="100%" height="80%">
+                                    <AreaChart data={slGridData}>
+                                        <defs>
+                                            <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#01849F" stopOpacity={0.1}/>
+                                                <stop offset="95%" stopColor="#55C48B" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                        <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fill: '#999', fontSize: 12}} dy={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#999', fontSize: 12}} dx={-10} />
+                                        <Tooltip 
+                                            contentStyle={{borderRadius: '1.5rem', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', fontWeight: 'bold'}}
+                                            cursor={{stroke: '#55C48B', strokeWidth: 2}}
+                                        />
+                                        <Area 
+                                            type="monotone" 
+                                            dataKey="load" 
+                                            stroke="#01849F" 
+                                            strokeWidth={4}
+                                            fillOpacity={1} 
+                                            fill="url(#colorLoad)" 
+                                        />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* Status Scoreboard */}
                 <section className="section-padding relative z-10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="bg-white rounded-[4rem] p-16 lg:p-24 shadow-premium border border-gray-50 flex flex-col items-center">
+                        <div className="bg-dim rounded-[4rem] p-16 lg:p-24 shadow-premium border border-gray-50 flex flex-col items-center">
                             <h2 className="text-3xl font-bold mb-16 text-gray-900 text-center">Global Sustainability Pulse</h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-16 w-full max-w-5xl">
                                 <div className="text-center">
@@ -185,6 +255,49 @@ const Home = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                {/* Why Choose Section */}
+                <section className="section-padding relative z-10 border-t border-gray-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                       <div className="flex flex-col lg:flex-row items-end justify-between mb-24 gap-10">
+                            <div className="max-w-2xl text-left">
+                                <h2 className="text-4xl font-bold text-gray-900 mb-6 italic underline decoration-teal-600 decoration-4">Why Flux for your <span className="text-gradient">Saving.</span></h2>
+                                <p className="text-lg text-gray-500 font-medium">Over 5k active users trust our AI to decipher complex tariff slabs and provide accurate household insights.</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <span className="w-12 h-1 bg-teal-600"></span>
+                                <span className="w-8 h-1 bg-teal-200"></span>
+                                <span className="w-4 h-1 bg-teal-100"></span>
+                            </div>
+                       </div>
+
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
+                            <div className="space-y-8 group">
+                                <div className="w-20 h-20 bg-white rounded-[2rem] shadow-premium flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 leading-tight">Insightful Pulse AI</h3>
+                                <p className="text-gray-500 leading-relaxed font-medium">Our advanced algorithms analyze your appliance usage patterns to reveal slab-level savings and optimization strategies.</p>
+                            </div>
+
+                            <div className="space-y-8 group">
+                                <div className="w-20 h-20 bg-white rounded-[2rem] shadow-premium flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 leading-tight">Bill Precision</h3>
+                                <p className="text-gray-500 leading-relaxed font-medium">Stop guessing your monthly energy costs. We provide real-time updates based on currents CEB/LECO tariff structures.</p>
+                            </div>
+
+                            <div className="space-y-8 group">
+                                <div className="w-20 h-20 bg-white rounded-[2rem] shadow-premium flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 leading-tight">Nature Focused</h3>
+                                <p className="text-gray-500 leading-relaxed font-medium">Environmental impact is at our core. Reducing your consumption pulse reduces the overall national carbon footprint.</p>
+                            </div>
+                       </div>
                     </div>
                 </section>
 
