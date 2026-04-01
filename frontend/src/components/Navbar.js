@@ -19,6 +19,7 @@ const Navbar = () => {
                         <Link to="/" className="text-gray-600 hover:text-blue-600 font-medium transition-colors">Home</Link>
                         <Link to="/cost-management" className="text-gray-600 hover:text-blue-600 font-medium transition-colors">Costs</Link>
                         <Link to="/energy-audit" className="text-gray-600 hover:text-blue-600 font-medium transition-colors">Audit</Link>
+                        <Link to="/carbon-tracker" className="text-gray-600 hover:text-blue-600 font-medium transition-colors">Carbon Tracker</Link>
                     </div>
 
                     <div className="flex items-center gap-4">

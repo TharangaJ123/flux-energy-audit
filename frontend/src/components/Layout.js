@@ -24,6 +24,8 @@ const Layout = ({ children }) => {
                             <ul className="space-y-2 text-gray-400">
                                 <li><Link to="/cost-management" className="hover:text-blue-600">Cost Tracking</Link></li>
                                 <li><Link to="/energy-audit" className="hover:text-blue-600">Audit Reports</Link></li>
+                                <li><Link to="/carbon-footprint" className="hover:text-blue-600">Carbon Footprint Tracking</Link></li>
+
                             </ul>
                         </div>
                         <div>
