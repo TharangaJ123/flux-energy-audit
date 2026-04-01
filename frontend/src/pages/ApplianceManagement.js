@@ -188,7 +188,7 @@ const ApplianceManagement = () => {
                  <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center mb-10 backdrop-blur-xl border border-white/10 shadow-2xl relative z-10 transition-transform group-hover:rotate-12">
                     <svg className="w-12 h-12 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                  </div>
-                 <h4 className="text-3xl font-bold mb-6 italic relative z-10">Pulse Optimization</h4>
+                 <h4 className="text-3xl font-bold mb-6 italic relative z-10 text-white">Pulse Optimization</h4>
                  <p className="text-teal-100/70 italic max-w-sm leading-relaxed mb-10 relative z-10">
                    Analyze your consumption patterns in the <span className="text-teal-400 font-bold">Audit Dashboard</span> to see how individual devices impact your national grid pulse contribution.
                  </p>
