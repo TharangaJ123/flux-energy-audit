@@ -1,9 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import carbonService from '../services/carbonFootprint.service';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [latestCarbon, setLatestCarbon] = useState(null);
+  const [monthlyAvg, setMonthlyAvg] = useState(null);
+  const [monthlyAvgStatus, setMonthlyAvgStatus] = useState(null);
+
+  useEffect(() => {
+    const fetchLatestCarbon = async () => {
+      try {
+        const records = await carbonService.getRecords();
+        if (records && records.length > 0) {
+          // Keep latest record for quick reference card behavior/tips.
+          setLatestCarbon(records[0]);
+
+          // Compute monthly average CO2 across all saved records.
+          const sum = records.reduce((acc, r) => acc + (Number(r.co2Emission) || 0), 0);
+          const avg = sum / records.length;
+          setMonthlyAvg(avg);
+
+          // Reuse backend threshold rules so homepage status matches tracker.
+          let status = 'Low';
+          if (avg > 150) status = 'High';
+          else if (avg > 80) status = 'Moderate';
+          setMonthlyAvgStatus(status);
+        }
+      } catch (err) {
+        console.error('Error fetching carbon data:', err);
+      }
+    };
+    fetchLatestCarbon();
+  }, []);
 
   const features = [
     {
@@ -29,6 +59,17 @@ const Home = () => {
       color: 'emerald'
     },
     {
+      title: 'Carbon Footprint',
+      desc: 'Measure, monitor, and reduce your environmental impact to support sustainability.',
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+        </svg>
+      ),
+      path: '/carbon-tracker',
+      color: 'teal'
+    },
+    {
       title: 'User Profile',
       desc: 'Manage your personal settings, energy goals, and account security.',
       icon: (
@@ -39,6 +80,7 @@ const Home = () => {
       path: '/user-management',
       color: 'slate'
     }
+
   ];
 
   const handleApplianceManagement = () => {
@@ -78,7 +120,7 @@ const Home = () => {
 
 
       {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,10 +156,37 @@ const Home = () => {
             <h4 className="text-2xl font-bold text-gray-900">85% Met</h4>
           </div>
         </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center text-teal-600">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">CO₂ Emission Status</p>
+            {latestCarbon && monthlyAvg !== null && monthlyAvgStatus ? (
+              // Show status and average on a single line with separate font sizes.
+              <h4 className={`font-bold whitespace-nowrap ${monthlyAvgStatus === 'High' ? 'text-red-600' : monthlyAvgStatus === 'Moderate' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                <span className="text-2xl">{`${monthlyAvgStatus}`}</span>
+                <span className="text-lg">{` - ${Number(monthlyAvg).toFixed(1)} kg/mo`}</span>
+
+              </h4>
+            ) : (
+              <h4 className="text-2xl font-bold text-gray-900">No Data</h4>
+            )}
+            {monthlyAvgStatus === 'Low' && (
+              <p className="text-[10px] text-emerald-500 font-bold mt-1 animate-pulse">✨ Champion: Keep using natural light!</p>
+            )}
+            {monthlyAvgStatus === 'Moderate' && (
+              <p className="text-[10px] text-amber-500 font-bold mt-1">💡 Tip: Unplug idle electronics.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Appliance Management Featured Card */}
-      <div 
+      <div
         className="bg-white rounded-3xl p-8 mb-16 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all cursor-pointer group"
         onClick={handleApplianceManagement}
       >
@@ -199,6 +268,17 @@ const Home = () => {
                 <span className="text-gray-500 text-sm">Smart saving tips based on local weather.</span>
               </div>
             </li>
+            <li className="flex items-start">
+              <div className="mt-1 bg-green-100 p-1 rounded-full mr-4 text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <span className="font-bold text-gray-900 block mb-1">Carbon Tracking</span>
+                <span className="text-gray-500 text-sm">Measure and reduce your environmental impact.</span>
+              </div>
+            </li>
           </ul>
         </div>
       </div>
@@ -206,7 +286,7 @@ const Home = () => {
 
       {/* Modules Grid */}
       <h2 className="text-3xl font-bold text-gray-900 mb-8 ml-1">Energy Modules</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {features.map((feature, idx) => (
           <div
             key={idx}
