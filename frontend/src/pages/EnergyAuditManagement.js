@@ -11,6 +11,7 @@ const EnergyAuditManagement = () => {
     const [activeAudit, setActiveAudit] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState('summary');
     const [isSimulating, setIsSimulating] = useState(false);
     const [simulationResult, setSimulationResult] = useState(null);
 
@@ -18,7 +19,6 @@ const EnergyAuditManagement = () => {
     const [chatMessages, setChatMessages] = useState([]);
     const [userInput, setUserInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
-    const [showChat, setShowChat] = useState(false);
     const chatEndRef = useRef(null);
 
     const [form, setForm] = useState({
@@ -56,7 +56,6 @@ const EnergyAuditManagement = () => {
     const fetchAppliances = useCallback(async () => {
         try {
             const response = await applianceApi.getAppliances();
-            // The API returns { message, results, data: [...] }
             setAppliances(response.data.data || []);
         } catch (err) {
             console.error('Appliance fetch error:', err);
@@ -70,8 +69,10 @@ const EnergyAuditManagement = () => {
     }, [fetchAudits, fetchAppliances]);
 
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [chatMessages]);
+        if (activeTab === 'assistant') {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [chatMessages, activeTab]);
 
     const handleApplianceToggle = (appliance) => {
         const isSelected = form.selectedAppliances.find(a => a.applianceId === appliance._id);
@@ -121,6 +122,7 @@ const EnergyAuditManagement = () => {
             }
             setShowForm(false);
             setForm({ month: new Date().toISOString().slice(0, 7), totalUnits: '', householdSize: 1, peakUsage: 'Day', selectedAppliances: [] });
+            setActiveTab('summary');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to process energy audit');
         }
@@ -192,264 +194,335 @@ const EnergyAuditManagement = () => {
         }
     };
 
+    const tabs = [
+        { id: 'summary', label: 'Summary', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg> },
+        { id: 'strategy', label: 'Strategy', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
+        { id: 'projection', label: 'Impact', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4" /></svg> },
+        { id: 'assistant', label: 'Chat Pulse', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg> },
+    ];
+
     return (
         <Layout>
-            <div className="max-w-7xl mx-auto py-8 px-4 flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-100px)]">
-                {/* Left Sidebar: Audit History */}
-                <div className="w-full lg:w-80 flex-shrink-0 space-y-6">
-                    <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-black text-gray-900 italic">Audit Log</h2>
-                            <button onClick={() => setShowForm(!showForm)} className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:rotate-90 transition-all duration-500">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                        </div>
+            <div className="section-padding max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col lg:flex-row gap-12 min-h-[700px]">
+                    {/* Simplified Sidebar */}
+                    <aside className="w-full lg:w-72 space-y-8">
+                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-premium">
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-lg font-bold text-gray-900">History</h2>
+                                <button
+                                    onClick={() => { setShowForm(true); setIsEditing(null); }}
+                                    className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-teal-100"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" /></svg>
+                                </button>
+                            </div>
 
-                        {loading ? (
-                            <p className="text-center text-gray-400">Loading...</p>
-                        ) : audits.length === 0 ? (
-                            <p className="text-gray-400 text-sm font-medium italic">No audits performed yet.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {audits.map(audit => (
-                                    <div
-                                        key={audit._id}
-                                        onClick={() => { setActiveAudit(audit); setChatMessages([]); setSimulationResult(null); }}
-                                        className={`p-4 rounded-2xl cursor-pointer transition-all border-2 ${activeAudit?._id === audit._id ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 border-transparent hover:bg-white hover:shadow-md'}`}
-                                    >
-                                        <p className="font-black text-xs text-blue-800 uppercase tracking-tighter mb-1">{formatMonth(audit.month)} {new Date(audit.createdAt).getFullYear()}</p>
-                                        <div className="flex justify-between items-center group">
-                                            <span className="text-lg font-black text-gray-900">{audit.totalUnits} <span className="text-xs font-bold text-gray-400">units</span></span>
-                                            <div className="flex gap-2">
-                                                <button onClick={(e) => handleDeleteAudit(audit._id, e)} className="p-1.5 bg-rose-50 text-rose-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-100">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                </button>
-                                                <span className={`px-2 py-1 text-[8px] font-black rounded-lg uppercase ${audit.efficiencyScore > 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                    Score: {audit.efficiencyScore || 'N/A'}
-                                                </span>
+                            {loading ? (
+                                <div className="space-y-4">
+                                    {[1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse"></div>)}
+                                </div>
+                            ) : audits.length === 0 ? (
+                                <div className="text-center py-10 opacity-30 italic text-xs">No records</div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {audits.map(audit => (
+                                        <div
+                                            key={audit._id}
+                                            onClick={() => { setActiveAudit(audit); setShowForm(false); setActiveTab('summary'); }}
+                                            className={`p-5 rounded-2xl cursor-pointer transition-all border group h-32 flex flex-col justify-between ${activeAudit?._id === audit._id ? 'bg-teal-50 border-teal-200 shadow-inner scale-[1.02]' : 'bg-gray-50 border-transparent hover:bg-white hover:border-gray-100'}`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider font-asap leading-tight">{formatMonth(audit.month)}<br/>{new Date(audit.createdAt).getFullYear()}</span>
+                                                <div className="flex gap-2">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); setActiveAudit(audit); startEditing(); }} 
+                                                        className="text-gray-300 hover:text-teal-600 opacity-0 group-hover:opacity-100 transition-all p-1"
+                                                    >
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => handleDeleteAudit(audit._id, e)} 
+                                                        className="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1"
+                                                    >
+                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                                    </button>
+                                                </div>
                                             </div>
+                                            <p className="text-lg font-bold text-gray-900">{audit.totalUnits} <span className="text-xs font-normal text-gray-400 font-asap">kWh</span></p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-grow">
+                        {showForm ? (
+                            <div className="bg-white p-10 lg:p-20 rounded-[3.5rem] shadow-premium border border-gray-100 animate-in zoom-in-95 duration-500">
+                                <div className="flex justify-between items-center mb-16">
+                                    <h2 className="text-4xl font-bold text-gray-900">{isEditing ? 'Pulse Correction' : 'Pulse Discovery'}</h2>
+                                    <button onClick={() => setShowForm(false)} className="px-5 py-2 text-xs font-bold text-gray-400 hover:text-gray-900 border border-gray-100 rounded-full transition-colors uppercase tracking-widest">Close</button>
+                                </div>
+
+                                <form onSubmit={handleCreateAudit} className="space-y-16">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Units Used (kWh)</label>
+                                            <input type="number" step="0.1" value={form.totalUnits} onChange={e => setForm({ ...form, totalUnits: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-2xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">People</label>
+                                            <input type="number" value={form.householdSize} onChange={e => setForm({ ...form, householdSize: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-2xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Month</label>
+                                            <input type="month" value={form.month} onChange={e => setForm({ ...form, month: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Peak Usage</label>
+                                            <select value={form.peakUsage} onChange={e => setForm({ ...form, peakUsage: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all appearance-none cursor-pointer">
+                                                <option value="Day">Day Focus (6am-6pm)</option>
+                                                <option value="Night">Peak Focus (6pm-12am)</option>
+                                            </select>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
 
-                    <div className="bg-gradient-to-br from-indigo-900 to-blue-900 p-8 rounded-[2rem] text-white shadow-xl relative overflow-hidden">
-                        <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
-                        <h4 className="text-xl font-black mb-4 italic">Efficiency Power</h4>
-                        <p className="text-xs text-blue-200 leading-relaxed font-medium">Flux Energy AI analyzes your habit patterns and suggests optimizations for a sustainable future.</p>
-                    </div>
-                </div>
-
-                {/* Main Content: Audit Details & AI Chat */}
-                <div className="flex-grow space-y-8">
-                    {showForm ? (
-                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-500">
-                            <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-3xl font-black text-gray-900 italic">{isEditing ? 'Update Energy Audit' : 'Start New Energy Audit'}</h2>
-                                <button onClick={() => { setShowForm(false); setIsEditing(null); }} className="text-gray-400 hover:text-gray-900 font-black uppercase text-xs tracking-widest">Cancel</button>
-                            </div>
-                            {error && <p className="bg-rose-50 text-rose-600 p-4 rounded-2xl mb-6 font-bold">{error}</p>}
-                            <form onSubmit={handleCreateAudit} className="space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Consumption Unit (kWh)</label>
-                                        <input type="number" step="0.1" value={form.totalUnits} onChange={e => setForm({ ...form, totalUnits: e.target.value })} className="w-full px-5 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-black text-xl" placeholder="0" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Household Size</label>
-                                        <input type="number" value={form.householdSize} onChange={e => setForm({ ...form, householdSize: e.target.value })} className="w-full px-5 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-black text-xl" placeholder="1" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Billing Month</label>
-                                        <input
-                                            type="month"
-                                            value={form.month}
-                                            onChange={e => setForm({ ...form, month: e.target.value })}
-                                            className="w-full px-5 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-black text-xl"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Peak Usage Period</label>
-                                        <select
-                                            value={form.peakUsage}
-                                            onChange={e => setForm({ ...form, peakUsage: e.target.value })}
-                                            className="w-full px-5 py-4 bg-gray-50 border-0 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-black text-xl appearance-none"
-                                        >
-                                            <option value="Day">Day (6 AM - 6 PM)</option>
-                                            <option value="Night">Night (6 PM - 6 AM)</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <label className="text-xs font-black text-gray-400 uppercase ml-1">Select Active Appliances</label>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        {appliances.map(app => (
-                                            <div
-                                                key={app._id}
-                                                onClick={() => handleApplianceToggle(app)}
-                                                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${form.selectedAppliances.find(a => a.applianceId === app._id) ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-gray-50 border-transparent text-gray-600 hover:bg-white hover:border-blue-200'}`}
-                                            >
-                                                <p className="font-black text-xs leading-none mb-1">{app.name}</p>
-                                                <p className={`text-[10px] font-bold ${form.selectedAppliances.find(a => a.applianceId === app._id) ? 'text-blue-100' : 'text-gray-400'}`}>{app.powerConsumption}W</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button type="submit" className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-2xl hover:bg-blue-700 shadow-2xl shadow-blue-100 transition-all active:scale-[0.98]">
-                                    {isEditing ? 'Update Audit with AI' : 'Generate AI Analysis'}
-                                </button>
-                            </form>
-                        </div>
-                    ) : !activeAudit ? (
-                        <div className="h-full flex flex-col items-center justify-center p-20 text-center bg-white rounded-[3rem] border border-gray-100 shadow-sm opacity-50">
-                            <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mb-8"><svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
-                            <h2 className="text-2xl font-black text-gray-400">Ready for Analysis</h2>
-                            <p className="text-gray-400 font-medium">Run your first audit to get personalized AI insights.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-8 animate-in fade-in duration-700">
-                            {/* AI Analysis Summary */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 relative group">
-                                    <button onClick={startEditing} className="absolute top-8 right-8 p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm opacity-0 group-hover:opacity-100">
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                    </button>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Efficiency Status</p>
-                                    <div className="flex items-end gap-3 mb-2">
-                                        <h3 className={`text-6xl font-black ${activeAudit.efficiencyScore > 70 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                            {activeAudit.efficiencyScore}%
-                                        </h3>
-                                        <p className="text-gray-400 font-bold mb-2">Score</p>
-                                    </div>
-                                    <p className="text-sm font-bold text-gray-600 italic mb-6">"{activeAudit.aiSummary}"</p>
-                                    
-                                    {activeAudit.badges && activeAudit.badges.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
-                                            {activeAudit.badges.map((badge, bIdx) => (
-                                                <div key={bIdx} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50/50 text-blue-700 text-[10px] font-black rounded-xl uppercase tracking-widest border border-blue-100">
-                                                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
-                                                    {badge}
+                                    <div className="space-y-8">
+                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Active Appliances</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {appliances.map(app => (
+                                                <div
+                                                    key={app._id}
+                                                    onClick={() => handleApplianceToggle(app)}
+                                                    className={`p-6 rounded-3xl border-2 transition-all cursor-pointer ${form.selectedAppliances.find(a => a.applianceId === app._id) ? 'bg-teal-600 border-teal-600 shadow-lg text-white' : 'bg-gray-50 border-transparent hover:border-teal-100'}`}
+                                                >
+                                                    <p className="font-bold text-sm mb-1 truncate">{app.name}</p>
+                                                    <p className={`text-[10px] uppercase font-bold tracking-widest font-asap ${form.selectedAppliances.find(a => a.applianceId === app._id) ? 'text-teal-100' : 'text-gray-400'}`}>{app.powerConsumption}W</p>
                                                 </div>
                                             ))}
                                         </div>
+                                    </div>
+
+                                    <button type="submit" className="btn-primary w-full py-6 text-xl shadow-teal-50 uppercase tracking-widest">
+                                        {isEditing ? 'Confirm Update' : 'Start Audit'}
+                                    </button>
+                                </form>
+                            </div>
+                        ) : !activeAudit ? (
+                            <div className="h-full bg-white rounded-[3.5rem] border border-gray-100 flex flex-col items-center justify-center p-24 text-center shadow-premium">
+                                <div className="w-20 h-20 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mb-8">
+                                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </div>
+                                <h2 className="text-3xl font-bold mb-4 text-gray-900 leading-tight">Begin Discovery</h2>
+                                <p className="text-gray-500 mb-12 max-w-sm italic mx-auto">Analyze your consumption patterns and reveal hidden energy patterns.</p>
+                                <button onClick={() => setShowForm(true)} className="btn-primary">Analyze now</button>
+                            </div>
+                        ) : (
+                            <div className="space-y-12 animate-in fade-in duration-500">
+                                {/* Tab Interface */}
+                                <div className="flex flex-wrap gap-4 border-b border-gray-100 pb-2">
+                                    {tabs.map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={`flex items-center gap-2.5 px-6 py-4 rounded-t-3xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-teal-50 text-teal-700 shadow-inner' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900 border-transparent'}`}
+                                        >
+                                            {tab.icon}
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="min-h-[500px]">
+                                    {activeTab === 'summary' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 animate-in zoom-in-95 duration-500">
+                                            <div className="card-premium relative group border-none bg-gray-50 hover:bg-white">
+                                                <button onClick={startEditing} className="absolute top-8 right-8 p-3 text-gray-300 hover:text-teal-600 hover:bg-teal-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-all shadow-sm">
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                </button>
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-10 font-asap">Quality of consumption</p>
+                                                <div className="flex items-end gap-3 mb-10">
+                                                    <h3 className={`text-8xl font-bold leading-none ${activeAudit.efficiencyScore > 70 ? 'text-teal-600' : 'text-rose-500'}`}>
+                                                        {activeAudit.efficiencyScore}%
+                                                    </h3>
+                                                    <p className="text-gray-300 font-bold mb-4 uppercase tracking-widest text-[10px] underline decoration-teal-600 decoration-2 font-asap">Score</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-4">
+                                                    {activeAudit.badges?.map((badge, idx) => {
+                                                        const text = badge.toLowerCase();
+                                                        let style = { bg: 'bg-cyan-50', border: 'border-cyan-100', text: 'text-cyan-700', iconBg: 'bg-cyan-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> };
+                                                        
+                                                        if (text.includes('hog') || text.includes('urgent') || text.includes('high') || text.includes('extreme')) {
+                                                            style = { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-700', iconBg: 'bg-rose-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> };
+                                                        } else if (text.includes('elite') || text.includes('efficient') || text.includes('star') || text.includes('savings')) {
+                                                            style = { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700', iconBg: 'bg-emerald-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg> };
+                                                        } else if (text.includes('optimize') || text.includes('potential') || text.includes('check')) {
+                                                            style = { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', iconBg: 'bg-amber-500', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> };
+                                                        }
+
+                                                        return (
+                                                            <div key={idx} className={`group flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all duration-500 shadow-sm hover:shadow-md ${style.bg} ${style.border} ${style.text}`}>
+                                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:rotate-12 text-white ${style.iconBg}`}>
+                                                                    {style.icon}
+                                                                </div>
+                                                                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{badge}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="p-12 flex flex-col justify-center">
+                                                <h4 className="text-3xl font-bold text-gray-900 mb-8 italic">"{activeAudit.aiSummary}"</h4>
+                                                <p className="text-lg text-gray-500 font-medium leading-relaxed italic">Flux Pulse AI has analyzed your monthly behavior and current household capacity.</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'strategy' && (
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-in slide-in-from-bottom-5 duration-500">
+                                            <div className="space-y-8">
+                                                <h4 className="text-xl font-bold text-gray-900 mb-6 font-asap uppercase tracking-widest">Active Pulse Strategy</h4>
+                                                <div className="space-y-6">
+                                                    {activeAudit.aiRecommendations?.map((rec, idx) => (
+                                                        <div key={idx} className="flex gap-6 p-10 bg-white border border-gray-100 rounded-[3rem] shadow-premium group hover:border-teal-200 transition-all">
+                                                            <div className="w-10 h-10 bg-teal-50 text-teal-600 font-bold rounded-full flex-shrink-0 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                                                                {idx + 1}
+                                                            </div>
+                                                            <p className="text-lg font-bold text-gray-900 leading-relaxed italic">"{rec}"</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="bg-dim p-12 rounded-[3.5rem] flex flex-col justify-between border border-gray-100 shadow-inner">
+                                                <div className="space-y-12">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-asap">Impact Zone</p>
+                                                        <p className="text-2xl font-bold text-gray-900">{activeAudit.peakUsage} Focus Area</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 font-asap">Household Weight</p>
+                                                        <p className="text-2xl font-bold text-gray-900 lg:text-3xl decoration-teal-600 underline decoration-4">{activeAudit.householdSize} Member Household</p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-12 py-10 border-t border-gray-200">
+                                                    <p className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-4 font-asap">Flux AI Verdict</p>
+                                                    <p className="text-2xl font-bold text-teal-900 italic leading-relaxed">Grade: {activeAudit.efficiencyScore > 80 ? 'Premium Efficiency' : 'Optimization Potential Active'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'projection' && (
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in slide-in-from-right-5 duration-500">
+                                            <div className="bg-white p-12 rounded-[3.5rem] shadow-premium border border-gray-100 lg:col-span-1 space-y-12">
+                                                <h4 className="text-xl font-bold text-gray-900 italic mb-8">Habit Discovery</h4>
+                                                <div className="space-y-10">
+                                                    {activeAudit.appliances?.slice(0, 4).map(item => (
+                                                        <div key={item.applianceId?._id || item.applianceId}>
+                                                            <div className="flex justify-between items-center mb-3 px-1">
+                                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-asap">{item.applianceId?.name || 'Device'}</span>
+                                                                <span className="text-[10px] font-bold text-teal-600 font-asap italic uppercase">{item.usageHours}h habitual</span>
+                                                            </div>
+                                                            <input
+                                                                type="range" min="0" max="24" step="0.5" defaultValue={item.usageHours}
+                                                                onMouseUp={(e) => runSimulation(item.applianceId?._id || item.applianceId, 'usageHours', e.target.value)}
+                                                                className="w-full h-1 bg-gray-100 rounded-full accent-teal-600 cursor-pointer"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[9px] uppercase font-bold text-gray-400 text-center tracking-widest italic pt-10">Adjust future usage to see Flux pulse projections.</p>
+                                            </div>
+
+                                            <div className="lg:col-span-2 bg-gradient-to-br from-teal-500 to-cyan-900 rounded-[4rem] p-24 text-center text-white relative shadow-2xl flex flex-col items-center justify-center overflow-hidden">
+                                                <div className="relative z-10">
+                                                    {isSimulating ? (
+                                                        <div className="flex flex-col items-center gap-10">
+                                                            <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                                            <p className="font-bold uppercase tracking-[0.3em] text-xs">AI projecting...</p>
+                                                        </div>
+                                                    ) : simulationResult ? (
+                                                        <div className="space-y-16 animate-in zoom-in-95 duration-500">
+                                                            <div>
+                                                                <p className="text-[12px] font-bold uppercase tracking-[0.5em] mb-10 opacity-70">Monthly Savings Potential</p>
+                                                                <h3 className="text-[8rem] font-bold leading-none tracking-tighter">
+                                                                    {simulationResult.estimated_savings_units?.toFixed(1)}
+                                                                    <span className="text-xl ml-4 opacity-50 uppercase tracking-widest">Units</span>
+                                                                </h3>
+                                                            </div>
+                                                            <div className="flex flex-col items-center max-w-xl">
+                                                                <p className="text-2xl font-bold leading-relaxed italic opacity-95 underline decoration-teal-400 decoration-2">"{simulationResult.explanation}"</p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-8">
+                                                            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-10">
+                                                                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+                                                            </div>
+                                                            <h3 className="text-4xl font-bold italic mb-6">Simulation Active</h3>
+                                                            <p className="text-teal-100 text-lg opacity-80 max-w-sm mx-auto leading-relaxed">Pulse any device slider to reveal your habitual energy potential.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'assistant' && (
+                                        <div className="bg-white rounded-[4rem] shadow-premium border border-gray-100 flex flex-col h-[700px] animate-in fade-in duration-700 overflow-hidden">
+                                            <div className="p-10 border-b border-gray-50 flex items-center gap-6">
+                                                <div className="w-12 h-12 bg-teal-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold italic shadow-lg">P</div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-gray-900">Flux Assistant</h3>
+                                                    <p className="text-[9px] font-bold text-teal-600 uppercase tracking-widest">Habit pulse analyzer</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex-grow p-12 overflow-y-auto space-y-10 custom-scrollbar bg-dim/30">
+                                                {chatMessages.length === 0 && (
+                                                    <div className="h-full flex flex-col items-center justify-center text-center opacity-40 px-24">
+                                                        <p className="text-3xl font-bold italic mb-6 text-gray-400">"What are my peak slab impacts?"</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">Inquire about CEB/LECO slab optimizations and high-load appliance timing.</p>
+                                                    </div>
+                                                )}
+                                                {chatMessages.map((msg, idx) => (
+                                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                        <div className={`max-w-[75%] px-10 py-6 rounded-[2.5rem] text-lg font-bold leading-relaxed italic ${msg.role === 'user' ? 'bg-teal-600 text-white rounded-br-none shadow-xl' : 'bg-white text-gray-900 border border-gray-100 rounded-bl-none shadow-sm'}`}>
+                                                            {msg.content}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {chatLoading && (
+                                                    <div className="flex justify-start">
+                                                        <div className="bg-white px-8 py-5 rounded-[2rem] rounded-bl-none flex gap-2 border border-gray-100">
+                                                            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+                                                            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                                                            <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <div ref={chatEndRef} />
+                                            </div>
+
+                                            <form onSubmit={handleChat} className="p-10 bg-white border-t border-gray-50 flex gap-6">
+                                                <input
+                                                    value={userInput}
+                                                    onChange={e => setUserInput(e.target.value)}
+                                                    placeholder="Pulse inquire..."
+                                                    className="grow bg-gray-50 border-0 rounded-3xl px-10 py-6 font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all shadow-inner"
+                                                />
+                                                <button type="submit" disabled={chatLoading} className="w-24 bg-teal-600 text-white rounded-[2.5rem] flex items-center justify-center hover:bg-teal-700 transition-all shadow-xl active:scale-95 disabled:grayscale">
+                                                    <svg className="w-8 h-8 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 12h14M12 5l7 7-7 7" /></svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     )}
                                 </div>
-
-                                <div className="lg:col-span-2 bg-gray-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
-                                    <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl"></div>
-                                    <p className="text-[10px] font-black text-blue-400 uppercase mb-6 tracking-widest">AI Observations</p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                        {activeAudit.aiRecommendations?.slice(0, 4).map((recommendation, idx) => (
-                                            <div key={idx} className="flex gap-3 text-sm">
-                                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                                                <p className="text-gray-300 font-medium leading-relaxed">{recommendation}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
                             </div>
-
-                            {/* Impact Simulation & AI Chat */}
-                            {showChat && (
-                                <div className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-white shadow-[-20px_0_60px_rgba(0,0,0,0.1)] border-l border-gray-100 z-50 flex flex-col animate-in slide-in-from-right duration-500">
-                                    <div className="p-6 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center"><svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg></div>
-                                            <h3 className="text-xl font-black text-gray-900">Energy Assistant</h3>
-                                        </div>
-                                        <button onClick={() => setShowChat(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-                                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
-                                        </button>
-                                    </div>
-
-                                    <div className="flex-grow p-6 overflow-y-auto space-y-6">
-                                        {chatMessages.length === 0 && (
-                                            <div className="h-full flex flex-col items-center justify-center opacity-30 text-center px-10">
-                                                <p className="text-lg font-black text-gray-400 italic mb-2">"How can I reduce my bill further?"</p>
-                                                <p className="text-sm text-gray-400 font-medium">Ask Flux AI about this audit's findings.</p>
-                                            </div>
-                                        )}
-                                        {chatMessages.map((msg, idx) => (
-                                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`max-w-[85%] px-6 py-4 rounded-[2rem] text-sm font-medium leading-relaxed ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none shadow-sm'}`}>
-                                                    {msg.content}
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {chatLoading && <div className="flex justify-start"><div className="bg-gray-100 px-6 py-4 rounded-[2rem] rounded-bl-none flex gap-1"><span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></span><span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-150"></span><span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce delay-300"></span></div></div>}
-                                        <div ref={chatEndRef} />
-                                    </div>
-
-                                    <form onSubmit={handleChat} className="p-6 border-t border-gray-100 flex gap-3">
-                                        <input
-                                            value={userInput}
-                                            onChange={e => setUserInput(e.target.value)}
-                                            placeholder="Ask a question..."
-                                            className="grow bg-gray-100 border-0 rounded-2xl px-6 py-4 font-bold text-gray-800 focus:ring-4 focus:ring-blue-100 outline-none"
-                                        />
-                                        <button type="submit" disabled={chatLoading} className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:bg-blue-700 transition-all shadow-lg active:scale-90">
-                                            <svg className="w-6 h-6 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                                        </button>
-                                    </form>
-                                </div>
-                            )}
-
-                            {/* Simulation Panel */}
-                            <div className="w-full space-y-6">
-                                <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h3 className="text-xl font-black text-gray-900 italic">Impact Simulator</h3>
-                                        {!showChat && (
-                                            <button 
-                                                onClick={() => setShowChat(true)}
-                                                className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                                            >
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                                                Ask Assistant
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="space-y-6">
-                                        {activeAudit.appliances?.slice(0, 3).map(item => (
-                                            <div key={item.applianceId?._id || item.applianceId}>
-                                                <div className="flex justify-between items-center px-1 mb-2">
-                                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{item.applianceId?.name || item.name || 'Device'}</span>
-                                                    <span className="text-xs font-bold text-blue-600">{item.usageHours}h Usage</span>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        type="range" min="0" max="24" step="0.5" defaultValue={item.usageHours}
-                                                        onMouseUp={(e) => runSimulation(item.applianceId?._id || item.applianceId, 'usageHours', e.target.value)}
-                                                        className="grow accent-blue-600 h-2 mt-4"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <p className="text-[10px] text-gray-400 text-center font-bold px-4 italic leading-tight">Adjust any slider to see how usage changes affect your efficiency real-time via AI projection.</p>
-                                    </div>
-                                </div>
-
-                                {simulationResult && (
-                                    <div className="bg-emerald-600 p-8 rounded-[3rem] text-white shadow-2xl animate-in fade-in slide-in-from-right-10 duration-500">
-                                        <p className="text-[10px] font-black uppercase mb-4 opacity-70">Simulation Success</p>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <h4 className="text-3xl font-black italic">{simulationResult.estimated_savings_units?.toFixed(2)} <span className="text-sm not-italic opacity-60">Units Saved</span></h4>
-                                                <p className="text-xs font-bold text-emerald-100">Projected savings with recommended patterns.</p>
-                                            </div>
-                                            <div className="pt-4 border-t border-white/10">
-                                                <p className="text-sm font-bold leading-relaxed italic">AI Verdict: "{simulationResult.explanation}"</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </main>
                 </div>
             </div>
         </Layout>
