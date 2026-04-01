@@ -107,7 +107,7 @@ const Home = () => {
                             <div className="relative order-first lg:order-last">
                                 <div className="bg-white p-2 rounded-[3.5rem] shadow-2xl relative z-20 border border-gray-50">
                                     <img 
-                                        src="https://images.unsplash.com/photo-1551288049-bbbda536339a?q=80&w=2670&auto=format&fit=crop" 
+                                        src="/hero-image.png" 
                                         alt="Clean Energy Analysis" 
                                         className="rounded-[3rem] w-full object-cover shadow-inner h-[500px]"
                                     />
