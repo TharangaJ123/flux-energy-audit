@@ -29,6 +29,24 @@ const costSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        document: {
+            originalName: {
+                type: String,
+                trim: true,
+            },
+            mimeType: {
+                type: String,
+                trim: true,
+            },
+            size: {
+                type: Number,
+                min: 0,
+            },
+            path: {
+                type: String,
+                trim: true,
+            },
+        },
     },
     {
         timestamps: true,

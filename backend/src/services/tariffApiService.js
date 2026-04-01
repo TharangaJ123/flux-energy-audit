@@ -41,6 +41,7 @@ const fetchTariffPlan = async ({ provider, month, year }) => {
         peakRate: Number(data.peakRate || 0),
         offPeakRate: Number(data.offPeakRate || 0),
         taxRate: Number(data.taxRate || 0),
+        effectiveFrom: data.effectiveFrom || null,
     };
 
     if (!normalized.slabs.length || Number.isNaN(normalized.fixedCharge) || Number.isNaN(normalized.taxRate)) {
