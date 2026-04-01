@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { applianceApi } from '../services/api';
+import Layout from '../components/Layout';
 
 const ApplianceManagement = () => {
   const navigate = useNavigate();
@@ -14,15 +15,12 @@ const ApplianceManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [city, setCity] = useState('Colombo');
 
-  // Automatically detect location on mount
   useEffect(() => {
     const detectLocation = async () => {
       try {
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
-        if (data.city) {
-          setCity(data.city);
-        }
+        if (data.city) setCity(data.city);
       } catch (err) {
         console.error('Location detection failed:', err);
       }
@@ -30,7 +28,6 @@ const ApplianceManagement = () => {
     detectLocation();
   }, []);
 
-  // Form state
   const [applianceForm, setApplianceForm] = useState({
     name: '',
     powerConsumption: '',
@@ -53,10 +50,8 @@ const ApplianceManagement = () => {
       setStats(statsRes.data.data || null);
       setAuditData(auditRes.data.data || null);
     } catch (err) {
-      setError('Failed to fetch data: ' + (err.response?.data?.message || err.message));
-      if (err.response?.status === 401) {
-        navigate('/user-management');
-      }
+      setError('Failed to fetch pulse data: ' + (err.response?.data?.message || err.message));
+      if (err.response?.status === 401) navigate('/user-management');
     } finally {
       setLoading(false);
     }
@@ -71,38 +66,35 @@ const ApplianceManagement = () => {
     setError('');
     try {
       if (!applianceForm.name || !applianceForm.powerConsumption || !applianceForm.usageHours) {
-        setError('Please fill in all required fields');
+        setError('Please fill in all required pulse parameters');
         return;
       }
-
       const data = {
         ...applianceForm,
         powerConsumption: parseFloat(applianceForm.powerConsumption),
         usageHours: parseFloat(applianceForm.usageHours)
       };
-
       if (editingId) {
         await applianceApi.updateAppliance(editingId, data);
       } else {
         await applianceApi.createAppliance(data);
       }
-
       setApplianceForm({ name: '', powerConsumption: '', usageHours: '', category: 'General' });
       setEditingId(null);
       setShowForm(false);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save appliance');
+      setError(err.response?.data?.message || 'Failed to sync appliance pulse');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this appliance?')) {
+    if (window.confirm('Delete this appliance pulse record?')) {
       try {
         await applianceApi.deleteAppliance(id);
         fetchData();
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete appliance');
+        setError('Failed to delete appliance pulse');
       }
     }
   };
@@ -119,290 +111,249 @@ const ApplianceManagement = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const tabs = [
+    { id: 'list', label: 'My Devices' },
+    { id: 'audit', label: 'Audit Dashboard' },
+    { id: 'stats', label: 'Consumption Stats' }
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Header */}
-      <div className="bg-blue-600 text-white p-6 shadow-lg">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Appliance Management
-            </h1>
-            <p className="text-blue-100 mt-1">Monitor and optimize your household energy footprint</p>
-          </div>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition-colors font-semibold"
-          >
-            ← Back to Home
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto mt-8 px-4">
-        {/* Navigation Tabs */}
-        <div className="flex gap-4 mb-8 border-b overflow-x-auto">
-          {['list', 'audit', 'stats'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-6 font-bold whitespace-nowrap transition-all ${activeTab === tab
-                  ? 'border-b-4 border-blue-600 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-800'
-                }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)} Dashboard
-            </button>
-          ))}
-        </div>
-
-        {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center justify-between">
-            <span>{error}</span>
-            <button onClick={() => setError('')} className="font-bold">✕</button>
-          </div>
-        )}
-
-        {/* Stats Tab Content */}
-        {activeTab === 'stats' && stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-md border-b-4 border-blue-500">
-              <p className="text-gray-500 font-semibold uppercase text-xs">Total Appliances</p>
-              <p className="text-4xl font-black text-gray-800 mt-1">{stats.totalAppliances}</p>
+    <Layout>
+      <div className="section-padding bg-white min-h-[800px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">Device <span className="text-gradient">Pulse Center</span></h1>
+              <p className="text-gray-500 font-medium italic">Manage household appliances and analyze real-time usage parameters.</p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-md border-b-4 border-yellow-500">
-              <p className="text-gray-500 font-semibold uppercase text-xs">Total Power Load</p>
-              <p className="text-4xl font-black text-gray-800 mt-1">{stats.totalPowerWatts} <span className="text-xl">W</span></p>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-md border-b-4 border-purple-500">
-              <p className="text-gray-500 font-semibold uppercase text-xs">Highest Consumer</p>
-              <p className="text-xl font-bold text-gray-800 mt-1">{stats.highestConsumer?.name || 'N/A'}</p>
-              <p className="text-purple-600 font-semibold">{stats.highestConsumer?.monthlyKWh.toFixed(2)} kWh/mo</p>
-            </div>
-          </div>
-        )}
-
-        {/* Audit Tab Content */}
-        {activeTab === 'audit' && auditData && (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <h3 className="text-2xl font-bold text-gray-800">Energy Consumption Audit</h3>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Enter City"
-                    className="border p-2 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button onClick={fetchData} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">Refresh</button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-blue-50 p-6 rounded-xl">
-                  <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                    </svg>
-                    Consumption Summary
-                  </h4>
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <p className="text-gray-600">Daily Total</p>
-                      <p className="text-4xl font-black text-blue-700">{auditData.dailyTotalKWh.toFixed(2)} <span className="text-lg">kWh</span></p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-gray-600">Monthly Est.</p>
-                      <p className="text-3xl font-bold text-indigo-700">{auditData.monthlyTotalKWh.toFixed(2)} <span className="text-base">kWh</span></p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-indigo-50 p-6 rounded-xl">
-                  <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
-                    </svg>
-                    Weather-Driven Insights
-                  </h4>
-                  {auditData.weatherInsights.error ? (
-                    <p className="text-red-600">{auditData.weatherInsights.error}</p>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl font-bold text-indigo-900">{auditData.weatherInsights.temp}°C</span>
-                        <span className="text-indigo-600 capitalize font-semibold">{auditData.weatherInsights.description} in {auditData.weatherInsights.city}</span>
-                      </div>
-                      <p className="text-gray-700 leading-relaxed italic border-l-4 border-indigo-300 pl-4">
-                        "{auditData.weatherInsights.insight}"
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* List Tab Content */}
-        {activeTab === 'list' && (
-          <div className="space-y-6">
-            {/* Form Section */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-              <h3 className="font-bold text-xl text-gray-800">My Appliances</h3>
+            {activeTab === 'list' && (
               <button
-                onClick={() => {
-                  setShowForm(!showForm);
-                  if (!showForm) setEditingId(null);
-                }}
-                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all ${showForm ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
+                onClick={() => { setShowForm(!showForm); if (!showForm) setEditingId(null); }}
+                className="btn-primary"
               >
-                {showForm ? 'Cancel' : '+ New Appliance'}
+                {showForm ? 'Cancel Pulse' : '+ Add New Device'}
               </button>
-            </div>
+            )}
+          </div>
 
-            {showForm && (
-              <div className="bg-white p-6 rounded-xl shadow-lg animate-in fade-in slide-in-from-top-4 duration-300">
-                <h4 className="text-lg font-bold text-gray-800 mb-6">{editingId ? 'Update Appliance' : 'Add New Appliance'}</h4>
-                <form onSubmit={handleAddOrUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Appliance Name *</label>
+          {/* Navigation Tabs */}
+          <div className="flex flex-wrap gap-4 mb-16 border-b border-gray-100 pb-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2.5 px-8 py-4 rounded-t-[2.5rem] text-xs font-bold uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'bg-teal-50 text-teal-700 shadow-inner' : 'text-gray-400 hover:text-gray-900'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <div className="mb-12 p-6 bg-red-50 text-red-600 rounded-[2rem] font-bold text-sm italic border-l-4 border-red-500 flex justify-between items-center">
+              <span>{error}</span>
+              <button onClick={() => setError('')} className="p-2 hover:bg-red-100 rounded-full">✕</button>
+            </div>
+          )}
+
+          {/* Stats Tab Content */}
+          {activeTab === 'stats' && stats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16 animate-in zoom-in-95 duration-500">
+              <div className="card-premium">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Total Load Count</p>
+                <div className="flex items-end gap-3">
+                  <p className="text-5xl font-bold text-gray-900">{stats.totalAppliances}</p>
+                  <p className="text-gray-400 font-bold mb-1 uppercase text-[10px]">Devices</p>
+                </div>
+              </div>
+              <div className="card-premium border-teal-100/50 bg-teal-50/10">
+                <p className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-6">Power Load Pulse</p>
+                <div className="flex items-end gap-3">
+                  <p className="text-5xl font-bold text-teal-600">{stats.totalPowerWatts}</p>
+                  <p className="text-teal-400 font-bold mb-1 uppercase text-[10px]">Watts</p>
+                </div>
+              </div>
+              <div className="card-premium">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Highest Consumer</p>
+                <p className="text-2xl font-bold text-gray-900 mb-2 truncate italic">"{stats.highestConsumer?.name || 'N/A'}"</p>
+                <p className="text-teal-600 font-bold text-xs uppercase tracking-widest">{stats.highestConsumer?.monthlyKWh.toFixed(2)} kWh / mo</p>
+              </div>
+            </div>
+          )}
+
+          {/* Audit Tab Content */}
+          {activeTab === 'audit' && auditData && (
+            <div className="space-y-12 animate-in slide-in-from-bottom-5 duration-500">
+              <div className="card-premium p-12 lg:p-16 border-none bg-dim">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-16">
+                  <h3 className="text-3xl font-bold italic">Pulse Consumption Audit</h3>
+                  <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm">
                     <input
                       type="text"
-                      placeholder="e.g. Master Bedroom AC"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={applianceForm.name}
-                      onChange={(e) => setApplianceForm({ ...applianceForm, name: e.target.value })}
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Switch City..."
+                      className="px-6 py-3 bg-gray-50 border-0 rounded-xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-teal-100"
                     />
+                    <button onClick={fetchData} className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-md hover:bg-teal-700">Sync</button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
-                    <select
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={applianceForm.category}
-                      onChange={(e) => setApplianceForm({ ...applianceForm, category: e.target.value })}
-                    >
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Power Consumption (Watts) *</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 1500"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={applianceForm.powerConsumption}
-                      onChange={(e) => setApplianceForm({ ...applianceForm, powerConsumption: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Daily Usage Hours *</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      placeholder="e.g. 8"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={applianceForm.usageHours}
-                      onChange={(e) => setApplianceForm({ ...applianceForm, usageHours: e.target.value })}
-                    />
-                  </div>
-                  <div className="md:col-span-2 flex justify-end gap-3 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowForm(false)}
-                      className="px-6 py-2 text-gray-600 font-bold"
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-8 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors"
-                    >
-                      {editingId ? 'Update Appliance' : 'Add Appliance'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
-              </div>
-            ) : appliances.length === 0 ? (
-              <div className="bg-white p-12 rounded-xl shadow-md text-center">
-                <div className="mb-4 flex justify-center text-gray-300">
-                  <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
                 </div>
-                <h4 className="text-2xl font-bold text-gray-400">No Appliances Registered</h4>
-                <p className="text-gray-500 mt-2">Start adding your household devices to track your energy consumption.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {appliances.map((app) => (
-                  <div key={app._id} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all border border-transparent hover:border-blue-100 group">
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
-                        {app.category}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(app)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Edit"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDelete(app._id)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <h5 className="text-xl font-bold text-gray-800 mb-2">{app.name}</h5>
-                    <div className="space-y-2 mb-6">
-                      <div className="flex justify-between text-base">
-                        <span className="text-gray-500 font-semibold">Rated Power</span>
-                        <span className="font-bold text-gray-800">{app.powerConsumption} W</span>
-                      </div>
-                      <div className="flex justify-between text-base">
-                        <span className="text-gray-500 font-semibold">Daily Usage</span>
-                        <span className="font-bold text-gray-800">{app.usageHours} hrs/day</span>
-                      </div>
-                    </div>
-                    <div className="pt-4 border-t border-gray-50 flex justify-between items-center">
-                      <div className="text-left">
-                        <p className="text-xs text-gray-400 uppercase font-bold">Daily kWh</p>
-                        <p className="text-lg font-bold text-blue-600">{(app.powerConsumption * app.usageHours / 1000).toFixed(2)}</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  <div className="p-10 bg-white rounded-[3rem] shadow-premium">
+                    <h4 className="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-8">Daily Activity Pulse</h4>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <p className="text-5xl font-bold text-teal-600 tracking-tighter">{auditData.dailyTotalKWh.toFixed(2)}</p>
+                        <p className="text-xs font-bold text-gray-300 uppercase mt-2">kWh per day</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-gray-400 uppercase font-bold">Monthly kWh</p>
-                        <p className="text-lg font-bold text-indigo-600">{(app.powerConsumption * app.usageHours * 30 / 1000).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-primary-text mb-1 italic underline decoration-teal-500 decoration-4">{auditData.monthlyTotalKWh.toFixed(1)}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Monthly Est.</p>
                       </div>
                     </div>
                   </div>
-                ))}
+
+                  <div className="p-10 bg-white rounded-[3rem] shadow-premium border border-teal-50 flex flex-col justify-center">
+                    <h4 className="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-6">Climate Pulse Insight</h4>
+                    {auditData.weatherInsights.error ? (
+                      <p className="text-red-400 font-bold italic">{auditData.weatherInsights.error}</p>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                          <span className="text-4xl font-bold text-gray-900 leading-none tracking-tighter">{auditData.weatherInsights.temp}°C</span>
+                          <span className="px-4 py-2 bg-teal-50 text-teal-700 rounded-xl text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                            {auditData.weatherInsights.description} in {auditData.weatherInsights.city}
+                          </span>
+                        </div>
+                        <p className="text-lg text-secondary-text leading-relaxed font-bold italic border-l-4 border-teal-100 pl-6 underline decoration-transparent group-hover:decoration-teal-100">
+                          "{auditData.weatherInsights.insight}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+
+          {/* List Tab Content */}
+          {activeTab === 'list' && (
+            <div className="space-y-12 animate-in fade-in duration-500">
+              {showForm && (
+                <div className="bg-dim p-12 lg:p-20 rounded-[4rem] border border-gray-100 shadow-inner animate-in slide-in-from-top-10 duration-500">
+                  <h4 className="text-3xl font-bold text-gray-900 mb-12 italic underline decoration-teal-600 decoration-4">{editingId ? 'Edit Pulse Record' : 'Record New Device Pulse'}</h4>
+                  <form onSubmit={handleAddOrUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2">Device Designation</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Inverter AC Unit"
+                        className="w-full px-8 py-5 bg-white border border-gray-100 rounded-3xl text-xl font-bold focus:ring-4 focus:ring-teal-50 outline-none"
+                        value={applianceForm.name}
+                        onChange={(e) => setApplianceForm({ ...applianceForm, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2">Load Category</label>
+                      <select
+                        className="w-full px-8 py-5 bg-white border border-gray-100 rounded-3xl text-xl font-bold focus:ring-4 focus:ring-teal-50 outline-none appearance-none cursor-pointer"
+                        value={applianceForm.category}
+                        onChange={(e) => setApplianceForm({ ...applianceForm, category: e.target.value })}
+                      >
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2">Rated Consumpt. (W)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 1500"
+                        className="w-full px-8 py-5 bg-white border border-gray-100 rounded-3xl text-xl font-bold focus:ring-4 focus:ring-teal-50 outline-none"
+                        value={applianceForm.powerConsumption}
+                        onChange={(e) => setApplianceForm({ ...applianceForm, powerConsumption: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2">Habitual Pulse (Hrs/Day)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        placeholder="e.g. 8.5"
+                        className="w-full px-8 py-5 bg-white border border-gray-100 rounded-3xl text-xl font-bold focus:ring-4 focus:ring-teal-50 outline-none"
+                        value={applianceForm.usageHours}
+                        onChange={(e) => setApplianceForm({ ...applianceForm, usageHours: e.target.value })}
+                      />
+                    </div>
+                    <div className="md:col-span-2 flex justify-end gap-6 mt-10">
+                      <button type="button" onClick={() => setShowForm(false)} className="px-10 py-5 text-gray-400 font-bold border border-gray-100 rounded-full hover:text-gray-900 transition-colors uppercase text-xs tracking-widest">Close</button>
+                      <button type="submit" className="btn-primary">
+                        {editingId ? 'Sync Pulse Update' : 'Record Pulse'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="flex justify-center items-center py-32">
+                  <div className="w-16 h-16 border-4 border-teal-50 border-t-teal-600 rounded-full animate-spin"></div>
+                </div>
+              ) : appliances.length === 0 ? (
+                <div className="bg-dim p-24 rounded-[4rem] text-center shadow-inner border border-gray-50 opacity-60">
+                   <div className="w-20 h-20 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-10">
+                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                  <h4 className="text-3xl font-bold text-gray-900 mb-6">No Pulse Registered</h4>
+                  <p className="text-gray-500 font-medium italic">Start mapping your device pulse to reveal household energy patterns.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  {appliances.map((app) => (
+                    <div key={app._id} className="card-premium group relative">
+                      <div className="flex justify-between items-start mb-10">
+                        <span className="px-5 py-2 bg-gray-50 text-gray-500 rounded-2xl text-[10px] font-bold uppercase tracking-widest group-hover:bg-teal-50 group-hover:text-teal-700 transition-colors">
+                          {app.category}
+                        </span>
+                        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleEdit(app)} className="p-3 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-2xl transition-all shadow-sm">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                          <button onClick={() => handleDelete(app._id)} className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all shadow-sm">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <h5 className="text-2xl font-bold text-gray-900 mb-8 italic tracking-tight truncate border-b border-gray-100 pb-4">{app.name}</h5>
+                      <div className="space-y-6 mb-12">
+                        <div className="flex justify-between items-center px-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Load Pulse</span>
+                          <span className="text-xl font-bold text-gray-800">{app.powerConsumption} <span className="text-xs opacity-50 font-normal">W</span></span>
+                        </div>
+                        <div className="flex justify-between items-center px-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Daily Habit</span>
+                          <span className="text-xl font-bold text-gray-800">{app.usageHours} <span className="text-xs opacity-50 font-normal">Hrs</span></span>
+                        </div>
+                      </div>
+                      <div className="p-8 bg-dim rounded-3xl flex justify-between items-center">
+                        <div>
+                          <p className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em] mb-1">Daily Pulse</p>
+                          <p className="text-2xl font-bold text-teal-600">{(app.powerConsumption * app.usageHours / 1000).toFixed(2)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] text-gray-400 uppercase font-bold tracking-[0.2em] mb-1">Monthly Peak</p>
+                          <p className="text-2xl font-bold text-primary-text italic underline decoration-teal-600 decoration-2">{(app.powerConsumption * app.usageHours * 30 / 1000).toFixed(1)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

@@ -1,10 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Asap:ital,wght@0,100..900;1,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary-gradient: linear-gradient(90deg, #55C48B 0%, #01849F 100%);
+  --primary-text: #1a1a1a; /* Darker for better contrast */
+  --secondary-text: #5f6368; /* Standard Google-style secondary color */
+  --bg-light: #FFFFFF;
+  --bg-dim: #f8fafc;
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.03); /* Lighter shadow */
+  --header-height: 80px;
+}
+
+@layer base {
+  body {
+    @apply font-asap text-secondary-text bg-white antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-primary-text font-bold tracking-normal; /* Reduced black to bold */
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-10 py-4 text-white font-bold rounded-full transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+    background: var(--primary-gradient);
+    border: none;
+    cursor: pointer;
+  }
+
+  .section-padding {
+    @apply py-20 md:py-24; /* Slightly tighter but cleaner */
+  }
+
+  .card-premium {
+    @apply bg-white p-8 rounded-3xl transition-all duration-300 border border-gray-100 hover:border-teal-100 hover:shadow-xl;
+    box-shadow: var(--card-shadow);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--primary-gradient);
+  }
+
+  .nav-link {
+    @apply text-gray-600 font-semibold relative hover:text-teal-600 transition-colors;
+  }
+}
+
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     height: 8px;
+    width: 8px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: #f1f5f9;
