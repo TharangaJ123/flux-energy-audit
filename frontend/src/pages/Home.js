@@ -82,6 +82,16 @@ const Home = () => {
             path: '/carbon-tracker'
         },
         {
+            title: 'Appliance Management',
+            desc: 'Manage household appliances and analyze real-time usage parameters.',
+            icon: (
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            ),
+            path: '/appliance-management'
+        },
+        {
             title: 'User Profile',
             desc: 'Manage your personal settings, energy goals, and account security.',
             icon: (
@@ -156,18 +166,20 @@ const Home = () => {
                             <p className="text-gray-500 text-lg">Integrated tools designed specially for the Sri Lankan energy grid.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {features.map((feature, idx) => (
                                 <div
                                     key={idx}
                                     onClick={() => navigate(feature.path)}
-                                    className="card-premium cursor-pointer"
+                                    className="card-premium cursor-pointer h-full flex flex-col justify-between"
                                 >
-                                    <div className="w-14 h-14 rounded-2xl mb-10 flex items-center justify-center text-teal-600 bg-teal-50/50">
-                                        {feature.icon}
+                                    <div>
+                                        <div className="w-14 h-14 rounded-2xl mb-10 flex items-center justify-center text-teal-600 bg-teal-50/50">
+                                            {feature.icon}
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-4 text-gray-900">{feature.title}</h3>
+                                        <p className="text-gray-500 text-sm leading-relaxed mb-10">{feature.desc}</p>
                                     </div>
-                                    <h3 className="text-xl font-bold mb-4 text-gray-900">{feature.title}</h3>
-                                    <p className="text-gray-500 text-sm leading-relaxed mb-10">{feature.desc}</p>
                                     <div className="flex items-center text-xs font-bold text-teal-600 uppercase tracking-widest gap-2 group-hover:gap-3 transition-all">
                                         Open Module
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
