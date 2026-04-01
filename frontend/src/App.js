@@ -5,6 +5,8 @@ import UserManagement from './pages/UserManagement';
 import ApplianceManagement from './pages/ApplianceManagement';
 import EnergyAuditManagement from './pages/EnergyAuditManagement';
 
+import CarbonTracker from './pages/CarbonTracker';
+
 function App() {
   return (
     <Router>
@@ -12,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/cost-management" element={<CostManagement />} />
         <Route path="/user-management" element={<UserManagement />} />
+        <Route path="/carbon-tracker" element={<CarbonTracker />} />
         <Route path="/appliance-management" element={<ApplianceManagement />} />
         <Route path="/energy-audit" element={<EnergyAuditManagement />} />
         <Route path="/login" element={<UserManagement />} />
