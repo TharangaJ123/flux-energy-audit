@@ -3,11 +3,14 @@ const Joi = require('joi');
 const MAX_ALLOWED_YEAR = new Date().getFullYear() + 1;
 const MAX_ALLOWED_GOAL_AMOUNT = 1000000;
 
+const UTILITY_TYPES = ['electricity', 'gas', 'water', 'trash'];
+
 // Validation schemas for cost goal requests.
 
 // Validate payload for creating a cost goal.
 const createGoal = Joi.object({
     type: Joi.string().valid('monthly', 'yearly').required(),
+    utilityType: Joi.string().valid(...UTILITY_TYPES).default('electricity'),
     year: Joi.number().integer().min(1900).max(MAX_ALLOWED_YEAR).required(),
     month: Joi.when('type', {
         is: 'monthly',
@@ -21,6 +24,7 @@ const createGoal = Joi.object({
 // Validate payload for updating a cost goal.
 const updateGoal = Joi.object({
     type: Joi.string().valid('monthly', 'yearly'),
+    utilityType: Joi.string().valid(...UTILITY_TYPES),
     year: Joi.number().integer().min(1900).max(MAX_ALLOWED_YEAR),
     month: Joi.when('type', {
         is: 'monthly',

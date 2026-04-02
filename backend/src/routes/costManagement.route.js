@@ -432,6 +432,9 @@ router.delete('/goals/:id', protect, costGoalController.remove);
  *       404:
  *         description: Cost not found
  */
+// Get AI-driven spending insights.
+router.get('/ai-insights', protect, costController.getAIInsights);
+
 // Get one electricity cost by id.
 router.get('/:id', protect, costController.getById);
 

@@ -266,6 +266,13 @@ const EnergyAuditManagement = () => {
                                     <button onClick={() => setShowForm(false)} className="px-5 py-2 text-xs font-bold text-gray-400 hover:text-gray-900 border border-gray-100 rounded-full transition-colors uppercase tracking-widest">Close</button>
                                 </div>
 
+                                {error && (
+                                    <div className="bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-2xl mb-8 shadow-sm flex items-center gap-3 animate-in fade-in">
+                                        <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span className="font-medium">{error}</span>
+                                    </div>
+                                )}
+
                                 <form onSubmit={handleCreateAudit} className="space-y-16">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                         <div className="space-y-3">

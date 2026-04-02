@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-    Tooltip, ResponsiveContainer, defs, linearGradient, stop 
+    Tooltip, ResponsiveContainer
 } from 'recharts';
 import Layout from '../components/Layout';
 import carbonService from '../services/carbonFootprint.service';

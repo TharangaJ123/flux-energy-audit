@@ -54,6 +54,7 @@ export const costApi = {
     return api.put(`/costs/${id}`, costData);
   },
   deleteCost: (id) => api.delete(`/costs/${id}`),
+  getAIInsights: () => api.get('/costs/ai-insights'),
   downloadCostDocument: (id) => api.get(`/costs/${id}/document`, { responseType: 'blob' }),
   estimateCost: (estimationData) => api.post('/costs/estimate', estimationData),
   createGoal: (goalData) => api.post('/costs/goals', goalData),
@@ -72,7 +73,6 @@ export const applianceApi = {
   deleteAppliance: (id) => api.delete(`/appliances/${id}`),
   getApplianceStats: () => api.get('/appliances/stats'),
   getEnergyAudit: (city) => api.get(`/appliances/audit${city ? `?city=${city}` : ''}`),
-  getAppliances: () => api.get('/appliances'),
 };
 
 // Energy Audit Management APIs
