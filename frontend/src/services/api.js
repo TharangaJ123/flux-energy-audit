@@ -69,10 +69,9 @@ export const applianceApi = {
   getAppliances: () => api.get('/appliances'),
   getApplianceById: (id) => api.get(`/appliances/${id}`),
   updateAppliance: (id, data) => api.put(`/appliances/${id}`, data),
-  deleteAppliance: (id) => api.delete(`/appliances/${id}`),
+  deleteAppliance: (id, data) => api.delete(`/appliances/${id}`),
   getApplianceStats: () => api.get('/appliances/stats'),
   getEnergyAudit: (city) => api.get(`/appliances/audit${city ? `?city=${city}` : ''}`),
-  getAppliances: () => api.get('/appliances'),
 };
 
 // Energy Audit Management APIs

@@ -158,25 +158,43 @@ const ApplianceManagement = () => {
 
           {/* Stats Tab Content */}
           {activeTab === 'stats' && stats && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-16 animate-in zoom-in-95 duration-500">
-              <div className="card-premium">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Total Load Count</p>
-                <div className="flex items-end gap-3">
-                  <p className="text-5xl font-bold text-gray-900">{stats.totalAppliances}</p>
-                  <p className="text-gray-400 font-bold mb-1 uppercase text-[10px]">Devices</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 animate-in fade-in duration-700">
+              <div className="card-premium h-fit">
+                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-10">Load Distribution by Category</h4>
+                <div className="space-y-8">
+                  {Object.entries(stats.categoryBreakdown).map(([cat, count]) => (
+                    <div key={cat} className="group">
+                      <div className="flex justify-between items-end mb-3">
+                        <span className="text-sm font-bold text-gray-800 group-hover:text-teal-600 transition-colors uppercase tracking-tight">{cat}</span>
+                        <span className="text-xs font-bold text-gray-400 italic">{count} {count === 1 ? 'Device' : 'Devices'}</span>
+                      </div>
+                      <div className="w-full bg-gray-50 h-3 rounded-2xl overflow-hidden border border-gray-100 shadow-inner">
+                        <div 
+                          className="h-full rounded-2xl transition-all duration-1000 ease-out" 
+                          style={{ 
+                            width: `${(count / stats.totalAppliances) * 100}%`,
+                            background: 'var(--primary-gradient)'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="card-premium border-teal-100/50 bg-teal-50/10">
-                <p className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-6">Power Load Pulse</p>
-                <div className="flex items-end gap-3">
-                  <p className="text-5xl font-bold text-teal-600">{stats.totalPowerWatts}</p>
-                  <p className="text-teal-400 font-bold mb-1 uppercase text-[10px]">Watts</p>
-                </div>
-              </div>
-              <div className="card-premium">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-6">Highest Consumer</p>
-                <p className="text-2xl font-bold text-gray-900 mb-2 truncate italic">"{stats.highestConsumer?.name || 'N/A'}"</p>
-                <p className="text-teal-600 font-bold text-xs uppercase tracking-widest">{stats.highestConsumer?.monthlyKWh.toFixed(2)} kWh / mo</p>
+              <div className="card-premium bg-gradient-to-br from-gray-900 to-teal-900 text-white border-none flex flex-col justify-center items-center text-center p-16 overflow-hidden relative group">
+                 {/* Decorative background element */}
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl group-hover:bg-teal-500/20 transition-all duration-700"></div>
+                 
+                 <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center mb-10 backdrop-blur-xl border border-white/10 shadow-2xl relative z-10 transition-transform group-hover:rotate-12">
+                    <svg className="w-12 h-12 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                 </div>
+                 <h4 className="text-3xl font-bold mb-6 italic relative z-10 text-white">Pulse Optimization</h4>
+                 <p className="text-teal-100/70 italic max-w-sm leading-relaxed mb-10 relative z-10">
+                   Analyze your consumption patterns in the <span className="text-teal-400 font-bold">Audit Dashboard</span> to see how individual devices impact your national grid pulse contribution.
+                 </p>
+                 <button onClick={() => setActiveTab('audit')} className="px-10 py-4 bg-white text-teal-900 font-bold rounded-full hover:scale-105 transition-all shadow-xl relative z-10 uppercase text-[10px] tracking-widest">
+                   Analyze Audit
+                 </button>
               </div>
             </div>
           )}
@@ -199,38 +217,79 @@ const ApplianceManagement = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="p-10 bg-white rounded-[3rem] shadow-premium">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                  <div className="lg:col-span-1 p-10 bg-white rounded-[3rem] shadow-premium flex flex-col justify-between min-h-[300px]">
                     <h4 className="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-8">Daily Activity Pulse</h4>
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <p className="text-5xl font-bold text-teal-600 tracking-tighter">{auditData.dailyTotalKWh.toFixed(2)}</p>
-                        <p className="text-xs font-bold text-gray-300 uppercase mt-2">kWh per day</p>
-                      </div>
-                      <div className="text-right">
+                    <div>
+                      <p className="text-6xl font-bold text-teal-600 tracking-tighter mb-2">{auditData.dailyTotalKWh.toFixed(2)}</p>
+                      <p className="text-xs font-bold text-gray-300 uppercase">kWh per day</p>
+                    </div>
+                    <div className="pt-8 border-t border-gray-50 mt-8">
                         <p className="text-2xl font-bold text-primary-text mb-1 italic underline decoration-teal-500 decoration-4">{auditData.monthlyTotalKWh.toFixed(1)}</p>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Monthly Est.</p>
-                      </div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Monthly Estimated Baseline</p>
                     </div>
                   </div>
 
-                  <div className="p-10 bg-white rounded-[3rem] shadow-premium border border-teal-50 flex flex-col justify-center">
-                    <h4 className="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-6">Climate Pulse Insight</h4>
+                  <div className="lg:col-span-2 p-10 bg-white rounded-[3rem] shadow-premium border border-teal-50 relative overflow-hidden group min-h-[300px] flex flex-col justify-center">
+                    <div className="absolute top-0 right-0 p-8">
+                       <span className="px-4 py-2 bg-teal-50 text-teal-700 rounded-xl text-[10px] font-bold uppercase tracking-widest animate-pulse">AI Optimization Insight</span>
+                    </div>
+                    <h4 className="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-10">Climate Pulse Intel</h4>
                     {auditData.weatherInsights.error ? (
                       <p className="text-red-400 font-bold italic">{auditData.weatherInsights.error}</p>
                     ) : (
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-4">
-                          <span className="text-4xl font-bold text-gray-900 leading-none tracking-tighter">{auditData.weatherInsights.temp}°C</span>
-                          <span className="px-4 py-2 bg-teal-50 text-teal-700 rounded-xl text-[10px] font-bold uppercase tracking-widest animate-pulse">
+                      <div className="space-y-8">
+                        <div className="flex items-center gap-6">
+                          <span className="text-6xl font-bold text-gray-900 leading-none tracking-tighter">{auditData.weatherInsights.temp}°C</span>
+                          <div className="h-12 w-px bg-gray-100"></div>
+                          <span className="text-lg font-bold text-gray-500 italic">
                             {auditData.weatherInsights.description} in {auditData.weatherInsights.city}
                           </span>
                         </div>
-                        <p className="text-lg text-secondary-text leading-relaxed font-bold italic border-l-4 border-teal-100 pl-6 underline decoration-transparent group-hover:decoration-teal-100">
-                          "{auditData.weatherInsights.insight}"
-                        </p>
+                        <div className="p-8 bg-teal-50/30 rounded-[2rem] border-l-8 border-teal-500 relative">
+                           <svg className="absolute -top-4 -left-4 w-10 h-10 text-teal-200" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" /></svg>
+                           <p className="text-xl text-teal-900 leading-relaxed font-bold italic relative z-10">
+                            "{auditData.weatherInsights.insight}"
+                           </p>
+                        </div>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                <div className="mt-16 bg-white rounded-[3rem] p-12 shadow-premium border border-gray-50">
+                  <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 px-4">
+                    <div>
+                      <h4 className="font-bold text-gray-400 uppercase text-[10px] tracking-[0.3em] mb-4">Device Contribution Weightage</h4>
+                      <p className="text-2xl font-bold italic text-gray-900">Which loads define your <span className="text-gradient">Daily Pulse?</span></p>
+                    </div>
+                    <div className="px-6 py-3 bg-teal-50 text-teal-700 rounded-2xl text-[10px] font-bold uppercase tracking-widest border border-teal-100/50">
+                      Top Heavy Consumers
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {auditData.appliances.sort((a, b) => b.percentage - a.percentage).slice(0, 6).map((app, i) => (
+                      <div key={app.id || i} className="relative p-10 bg-dim rounded-[3rem] group border border-transparent hover:border-teal-100 transition-all duration-500 hover:shadow-xl">
+                        <span className="absolute top-6 right-8 text-5xl font-bold text-teal-600/5 group-hover:text-teal-600/10 transition-colors pointer-events-none">0{i+1}</span>
+                        <h5 className="font-bold text-gray-900 mb-6 truncate pr-16 italic border-b border-gray-100 pb-4">{app.name}</h5>
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-end">
+                            <p className="text-4xl font-bold text-teal-600 tracking-tighter">{app.percentage.toFixed(1)}<span className="text-sm opacity-50">%</span></p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 italic">{app.dailyKWh.toFixed(2)} kWh</p>
+                          </div>
+                          <div className="w-full bg-white h-2 rounded-full overflow-hidden shadow-inner border border-gray-50">
+                             <div 
+                              className="h-full rounded-full transition-all duration-1000 delay-300" 
+                              style={{ 
+                                width: `${app.percentage}%`,
+                                background: 'var(--primary-gradient)'
+                              }}
+                             ></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
