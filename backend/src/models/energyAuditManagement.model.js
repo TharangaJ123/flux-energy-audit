@@ -18,6 +18,12 @@ const energyAuditSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    // Number of people in the household
+    householdSize: {
+        type: Number,
+        required: true,
+        default: 1,
+    },
     // Primary time of electricity usage
     peakUsage: {
         type: String,

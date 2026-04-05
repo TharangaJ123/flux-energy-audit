@@ -5,33 +5,33 @@ const { runInTransaction } = require('../util/transaction');
 
 // Creates a new audit and performs AI analysis based on the consumed units and appliances
 exports.createAudit = async (userId, data) => {
+    // 1. Fetch full appliance details (names and power) BEFORE transaction & AI call
+    const populatedAppliances = await Promise.all(
+        data.appliances.map(async (app) => {
+            const appliance = await Appliance.findById(app.applianceId);
+            if (!appliance) throw new Error(`Appliance not found: ${app.applianceId}`);
+            return {
+                name: appliance.name,
+                powerConsumption: appliance.powerConsumption,
+                usageHours: app.usageHours,
+            };
+        })
+    );
+
+    // 2. Format inputs to be digestible by the AI model
+    const aiInput = {
+        month: data.month,
+        totalUnits: data.totalUnits,
+        householdSize: data.householdSize,
+        appliances: populatedAppliances,
+        previousMonthUnits: data.previousMonthUnits,
+    };
+
+    // 3. Request insights from Gemini AI (summary, recommendations, score, badges) - OUTSIDE TRANSACTION
+    const aiResult = await geminiService.generateAuditAnalysis(aiInput);
+
+    // 4. Start transaction ONLY for database write
     return await runInTransaction(async (session) => {
-        // 1. Fetch full appliance details (names and power) using IDs provided in the request
-        const populatedAppliances = await Promise.all(
-            data.appliances.map(async (app) => {
-                const appliance = await Appliance.findById(app.applianceId).session(session);
-                if (!appliance) throw new Error(`Appliance not found: ${app.applianceId}`);
-                return {
-                    name: appliance.name,
-                    powerConsumption: appliance.powerConsumption,
-                    usageHours: app.usageHours,
-                };
-            })
-        );
-
-        // 2. Format inputs to be digestible by the AI model
-        const aiInput = {
-            month: data.month,
-            totalUnits: data.totalUnits,
-            householdSize: data.householdSize,
-            appliances: populatedAppliances,
-            previousMonthUnits: data.previousMonthUnits,
-        };
-
-        // 3. Request insights from Gemini AI (summary, recommendations, score, badges)
-        const aiResult = await geminiService.generateAuditAnalysis(aiInput);
-
-        // 4. Create the final audit record including AI insights
         const newAudit = await EnergyAudit.create([{
             user: userId,
             ...data,
