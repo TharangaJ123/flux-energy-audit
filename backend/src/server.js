@@ -25,6 +25,7 @@ const energyAuditRoutes = require('./routes/energyAuditManagement.route');
 const costRoutes = require('./routes/costManagement.route');
 const carbonRoutes = require('./routes/carbonFootprintTracker.route');
 const applianceRoutes = require('./routes/appliancemanagement.route');
+const solarRoutes = require('./routes/solarEstimator.route');
 
 // Define Routes
 app.use('/api/users', userRoutes);
@@ -32,6 +33,7 @@ app.use('/api/energy-audits', energyAuditRoutes);
 app.use('/api/costs', costRoutes);
 app.use('/api/appliances', applianceRoutes);
 app.use('/api/carbon', carbonRoutes);
+app.use('/api/solar', solarRoutes);
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
