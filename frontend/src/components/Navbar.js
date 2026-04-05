@@ -40,6 +40,7 @@ const Navbar = () => {
                         <Link to="/appliance-management" className="nav-link">Appliances</Link>
                         <Link to="/cost-management" className="nav-link">Costs</Link>
                         <Link to="/energy-audit" className="nav-link">Audit</Link>
+                        <Link to="/solar-estimator" className="nav-link">Solar</Link>
                         <Link to="/carbon-tracker" className="nav-link">Carbon</Link>
                     </div>
 
