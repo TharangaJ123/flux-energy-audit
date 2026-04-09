@@ -1,3 +1,4 @@
+// User management tests focused on form validation and successful login behavior.
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import UserManagement from '../pages/UserManagement';

@@ -1,3 +1,4 @@
+// Carbon tracking dashboard for recording activities and visualizing emission trends.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import carbonService from '../services/carbonFootprint.service';

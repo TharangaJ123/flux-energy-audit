@@ -1,3 +1,4 @@
+// Route-level integration tests that exercise the Express app with mocked auth and services.
 jest.mock('../src/middleware/auth', () => {
     const { attachMockUser } = require('./helpers/mockAuth');
     return { protect: attachMockUser, authorize: () => attachMockUser };

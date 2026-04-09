@@ -1,3 +1,4 @@
+// Layout tests that ensure shared shell content remains visible around page content.
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Layout from '../components/Layout';

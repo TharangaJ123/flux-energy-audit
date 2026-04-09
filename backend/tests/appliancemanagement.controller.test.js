@@ -1,3 +1,4 @@
+// Unit tests for appliance controller success and not-found handling.
 jest.mock('../src/services/appliancemanagement.service', () => ({
     addAppliance: jest.fn(),
     getAppliancesByUser: jest.fn(),

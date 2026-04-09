@@ -1,3 +1,4 @@
+// Process entrypoint that loads configuration, connects to MongoDB, and starts the HTTP server.
 const dotenv = require('dotenv');
 const dns = require('dns');
 
@@ -15,6 +16,7 @@ const app = createApp();
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
+    // Only connect and listen during normal startup; test suites import the app directly.
     connectDB();
 
     app.listen(PORT, () => {

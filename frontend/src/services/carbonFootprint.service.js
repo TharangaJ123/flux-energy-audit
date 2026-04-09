@@ -1,3 +1,4 @@
+// Thin service wrapper around carbon footprint endpoints used by dashboard components.
 import api from './api';
 
 const CARBON_URL = '/carbon';

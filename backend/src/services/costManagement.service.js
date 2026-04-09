@@ -79,6 +79,7 @@ const MAX_FUTURE_MONTHS_FOR_BILLING = 1;
 const getMonthKey = (cost) => `${cost.year}-${String(cost.month).padStart(2, '0')}`;
 
 const createLocalCostInsights = ({ costs, goals }) => {
+    // Use a short recent window so the fallback adviser reacts to new bills instead of averaging the full history.
     const latestCosts = costs.slice(0, 6);
     const totalSpend = latestCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
     const avgSpend = latestCosts.length ? totalSpend / latestCosts.length : 0;
@@ -93,6 +94,7 @@ const createLocalCostInsights = ({ costs, goals }) => {
     const highlightCategory =
         Object.entries(spendingByUtility).sort((a, b) => b[1] - a[1])[0]?.[0] || 'General';
 
+    // Aggregate by billing month first so the trend compares recent month totals instead of individual bill rows.
     const costsByMonth = latestCosts.reduce((acc, cost) => {
         const monthKey = getMonthKey(cost);
         acc[monthKey] = (acc[monthKey] || 0) + Number(cost.amount || 0);
@@ -207,7 +209,7 @@ const getTariffPlan = async ({ provider, month, year }) => {
         try {
             const aiPlan = await geminiService.getAITariffPlan({ provider, month, year });
 
-            // Normalize slabs: convert null 'to' (from AI) into Infinity for the engine.
+            // The billing engine expects an open-ended final slab to use Infinity rather than null.
             const normalizedSlabs = aiPlan.slabs.map((slab) => ({
                 ...slab,
                 to: slab.to === null ? Infinity : Number(slab.to),
@@ -261,6 +263,7 @@ const estimateCostByTariff = async ({ units, month, year, provider, peakUnits = 
     const breakdown = [];
     let energyCharge = 0;
 
+    // Walk each slab in order and exhaust units progressively, matching how stepped utility tariffs are billed.
     for (const slab of plan.slabs) {
         if (remainingUnits <= 0) {
             break;
@@ -475,6 +478,7 @@ const getAIInsights = async (userId) => {
     try {
         return await geminiService.generateCostInsights({ costs, goals });
     } catch (error) {
+        // Keep the dashboard useful even when Gemini is unavailable or misconfigured.
         console.error('Falling back to local spending adviser:', error.message);
         return createLocalCostInsights({ costs, goals });
     }

@@ -1,3 +1,4 @@
+// Unit tests for the user controller's validation and error mapping behavior.
 jest.mock('../src/services/userManagement.service', () => ({
     registerUser: jest.fn(),
     loginUser: jest.fn(),

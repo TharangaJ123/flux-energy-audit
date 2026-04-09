@@ -1,3 +1,4 @@
+// Cost management dashboard for bills, goals, estimation, and AI spending insights.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { costApi } from '../services/api';
@@ -65,6 +66,7 @@ const CostManagement = () => {
       return null;
     }
 
+    // Form inputs arrive as strings; normalize once so validation and submit handlers share the same rules.
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
   };
@@ -167,6 +169,7 @@ const CostManagement = () => {
     setError('');
     try {
       const response = await costApi.downloadCostDocument(costId);
+      // Use an object URL so the protected download endpoint can still trigger a browser save dialog.
       const blobUrl = URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -235,6 +238,7 @@ const CostManagement = () => {
   };
 
   useEffect(() => {
+    // Each tab has distinct data dependencies; fetch lazily to avoid reloading everything on every navigation.
     if (activeTab === 'costs') {
       fetchCosts();
     } else if (activeTab === 'goals') {
@@ -249,6 +253,7 @@ const CostManagement = () => {
     try {
       const validationResult = validateCostForm(costForm);
       if (!validationResult.isValid) {
+        // Surface the first blocking message prominently while still keeping per-field errors in state.
         const firstMessage = Object.values(validationResult.errors)[0] || 'Please fix highlighted fields';
         setError(firstMessage);
         return;

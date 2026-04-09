@@ -1,3 +1,4 @@
+// Unit tests for cost controller flows that normalize payloads and surface API responses.
 jest.mock('../src/services/costManagement.service', () => ({
     createCost: jest.fn(),
     getCosts: jest.fn(),

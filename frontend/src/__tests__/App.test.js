@@ -1,3 +1,4 @@
+// Smoke tests that verify top-level routing renders the expected page shells.
 jest.mock('../pages/Home', () => () => <div>Home Page</div>);
 jest.mock('../pages/CostManagement', () => () => <div>Cost Management Page</div>);
 jest.mock('../pages/UserManagement', () => () => <div>User Management Page</div>);

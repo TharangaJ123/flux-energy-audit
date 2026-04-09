@@ -1,3 +1,4 @@
+// Express application factory shared by the production server and the test suite.
 const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
@@ -12,6 +13,7 @@ const swaggerSpec = require('./config/swagger');
 const createApp = () => {
     const app = express();
 
+    // Keep app construction separate from server startup so tests can import routes without opening a port.
     app.use(express.json());
     app.use(cors());
 

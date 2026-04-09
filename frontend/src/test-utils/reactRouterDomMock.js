@@ -1,3 +1,4 @@
+// Lightweight router shim used by frontend tests in place of the full routing package.
 import React, { createContext, useContext, useMemo } from 'react';
 
 const RouterContext = createContext({
@@ -7,6 +8,7 @@ const RouterContext = createContext({
 
 const getCurrentPath = () => window.location.pathname || '/';
 
+// The real router package is awkward to resolve under this CRA/Jest setup, so tests use a minimal shim.
 const RouterProvider = ({ children, pathname = '/', navigate = () => {} }) => (
   <RouterContext.Provider value={{ pathname, navigate }}>
     {children}
@@ -24,6 +26,7 @@ export const MemoryRouter = ({ children, initialEntries = ['/'] }) => (
 export const Routes = ({ children }) => {
   const { pathname } = useContext(RouterContext);
   const routeList = React.Children.toArray(children);
+  // Good enough for the current test suite: exact path match first, then fall back to the root route.
   const exactMatch = routeList.find((child) => child.props.path === pathname);
   const rootMatch = routeList.find((child) => child.props.path === '/');
   return exactMatch?.props.element || rootMatch?.props.element || null;

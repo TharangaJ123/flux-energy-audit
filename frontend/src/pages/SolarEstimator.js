@@ -1,3 +1,4 @@
+// Solar estimator page for rough rooftop solar sizing, cost, and payback calculations.
 import React, { useState } from 'react';
 import axios from 'axios';
 import Layout from '../components/Layout';

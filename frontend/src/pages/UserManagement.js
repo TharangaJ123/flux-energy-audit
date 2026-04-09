@@ -1,3 +1,4 @@
+// Authentication and profile page covering registration, login, and account maintenance.
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../services/api';

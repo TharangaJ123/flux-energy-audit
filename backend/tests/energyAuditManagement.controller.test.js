@@ -1,3 +1,4 @@
+// Unit tests for energy audit controller validation and missing-resource behavior.
 jest.mock('../src/services/energyAuditManagement.service', () => ({
     createAudit: jest.fn(),
     getAudits: jest.fn(),

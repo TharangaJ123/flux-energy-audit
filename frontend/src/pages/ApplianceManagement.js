@@ -1,3 +1,4 @@
+// Appliance management workspace for CRUD operations, summaries, and energy audit actions.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { applianceApi } from '../services/api';
