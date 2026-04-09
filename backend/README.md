@@ -77,6 +77,52 @@ npm run dev
 npm start
 ```
 
+## 🧪 Testing
+
+The backend test suite uses **Jest** for unit tests, **Supertest** for route-level integration tests, and **Artillery** for performance testing.
+
+### Run Unit and Integration Tests
+
+```bash
+npm test
+```
+
+### Run Tests with Coverage
+
+```bash
+npm run test:coverage
+```
+
+### Test Coverage Scope
+
+Current backend coverage includes:
+
+- User management controller tests
+- Cost management controller tests
+- Appliance management controller tests
+- Energy audit controller tests
+- API integration tests for major authenticated routes
+
+### Run Performance Test
+
+Start the backend first:
+
+```bash
+npm start
+```
+
+Then, in another terminal, run:
+
+```bash
+npm run test:performance
+```
+
+Artillery scenario file:
+
+```text
+tests/performance/costs-load.yml
+```
+
 ## 🔋 Advanced: Cost Estimation with Tariff Sources
 
 The `POST /api/costs/estimate` endpoint is engineered to handle dynamic pricing models. It gracefully supports multiple tariff sources:
