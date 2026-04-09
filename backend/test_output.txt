@@ -1,5 +1,5 @@
-[dotenv@17.2.4] injecting env (9) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
-[dotenv@17.2.4] injecting env (0) from .env -- tip: ≡ƒôí add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.4] injecting env (9) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.4] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
 Connecting to MONGO_URI...
 Connected to MongoDB
 Testing AI Insights for user: 69becfb14a6bd7ab9f99182f

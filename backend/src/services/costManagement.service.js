@@ -76,6 +76,92 @@ const tariffPlans = {
 const roundAmount = (value) => Number(value.toFixed(2));
 const MAX_FUTURE_MONTHS_FOR_BILLING = 1;
 
+const getMonthKey = (cost) => `${cost.year}-${String(cost.month).padStart(2, '0')}`;
+
+const createLocalCostInsights = ({ costs, goals }) => {
+    const latestCosts = costs.slice(0, 6);
+    const totalSpend = latestCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
+    const avgSpend = latestCosts.length ? totalSpend / latestCosts.length : 0;
+    const latestCost = latestCosts[0] || null;
+
+    const spendingByUtility = latestCosts.reduce((acc, cost) => {
+        const utilityType = cost.utilityType || 'General';
+        acc[utilityType] = (acc[utilityType] || 0) + Number(cost.amount || 0);
+        return acc;
+    }, {});
+
+    const highlightCategory =
+        Object.entries(spendingByUtility).sort((a, b) => b[1] - a[1])[0]?.[0] || 'General';
+
+    const costsByMonth = latestCosts.reduce((acc, cost) => {
+        const monthKey = getMonthKey(cost);
+        acc[monthKey] = (acc[monthKey] || 0) + Number(cost.amount || 0);
+        return acc;
+    }, {});
+
+    const orderedMonths = Object.entries(costsByMonth).sort((a, b) => b[0].localeCompare(a[0]));
+    const currentMonthTotal = orderedMonths[0]?.[1] || 0;
+    const previousMonthTotal = orderedMonths[1]?.[1] || 0;
+
+    const matchingGoal = latestCost
+        ? goals.find((goal) => !goal.utilityType || goal.utilityType === latestCost.utilityType)
+        : null;
+    const goalLimit = Number(matchingGoal?.targetAmount || matchingGoal?.amount || 0);
+
+    let status = 'on-track';
+    if (goalLimit > 0 && currentMonthTotal > goalLimit) {
+        status = currentMonthTotal > goalLimit * 1.15 ? 'critical' : 'warning';
+    } else if (goalLimit > 0 && currentMonthTotal <= goalLimit * 0.9) {
+        status = 'excellent';
+    }
+
+    const trendText =
+        previousMonthTotal > 0
+            ? currentMonthTotal > previousMonthTotal
+                ? `Your latest monthly utility total is up by ${roundAmount(((currentMonthTotal - previousMonthTotal) / previousMonthTotal) * 100)}% compared with the previous month.`
+                : `Your latest monthly utility total is down by ${roundAmount(((previousMonthTotal - currentMonthTotal) / previousMonthTotal) * 100)}% compared with the previous month.`
+            : 'More monthly history will make the adviser more precise.';
+
+    const summaryParts = [
+        `Based on your last ${latestCosts.length} recorded bill${latestCosts.length === 1 ? '' : 's'}, your average spend is ${roundAmount(avgSpend)}.`,
+        highlightCategory !== 'General'
+            ? `${highlightCategory} is currently the biggest cost category in your recent records.`
+            : 'Your recent records are enough to provide a basic spending snapshot.',
+        trendText,
+    ];
+
+    const recommendations = [];
+
+    if (highlightCategory && highlightCategory !== 'General') {
+        recommendations.push(`Review your recent ${highlightCategory.toLowerCase()} bills first, since that category is contributing the largest share of your recorded spend.`);
+    }
+
+    if (goalLimit > 0) {
+        if (currentMonthTotal > goalLimit) {
+            recommendations.push(`Your current recorded monthly total is above your goal of ${roundAmount(goalLimit)}. Reduce discretionary usage or adjust the goal to match actual billing patterns.`);
+        } else {
+            recommendations.push(`You are within your recorded budget goal of ${roundAmount(goalLimit)}. Keep tracking monthly bills to confirm the trend holds.`);
+        }
+    } else {
+        recommendations.push('Set a monthly spending goal so the adviser can flag over-budget periods earlier.');
+    }
+
+    recommendations.push('Track at least three consecutive months for each utility category to improve trend quality and seasonal comparisons.');
+
+    if (latestCost?.notes) {
+        recommendations.push('Use bill notes consistently for events like appliance purchases, travel, or leaks so unusual spikes are easier to explain later.');
+    } else {
+        recommendations.push('Add short notes when a bill spikes so later comparisons have useful context.');
+    }
+
+    return {
+        summary: summaryParts.join(' '),
+        recommendations: recommendations.slice(0, 4),
+        status,
+        highlight_category: highlightCategory,
+    };
+};
+
 const isBeyondAllowedBillingWindow = ({ month, year }) => {
     const billingDate = new Date(year, month - 1, 1);
     const now = new Date();
@@ -386,7 +472,12 @@ const getAIInsights = async (userId) => {
         };
     }
 
-    return await geminiService.generateCostInsights({ costs, goals });
+    try {
+        return await geminiService.generateCostInsights({ costs, goals });
+    } catch (error) {
+        console.error('Falling back to local spending adviser:', error.message);
+        return createLocalCostInsights({ costs, goals });
+    }
 };
 
 module.exports = {

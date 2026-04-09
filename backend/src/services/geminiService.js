@@ -205,16 +205,7 @@ exports.generateCostInsights = async ({ costs, goals }) => {
         return await callGemini(prompt);
     } catch (error) {
         console.error("Error generating cost insights:", error);
-        return {
-            summary: "I'm currently unable to analyze your data in detail, but your general spending seems consistent.",
-            recommendations: [
-                "Regularly monitor your peak-hour electricity usage.",
-                "Compare your current water usage with previous seasonal averages.",
-                "Ensure your monthly goals are realistic based on historical data."
-            ],
-            status: "on-track",
-            highlight_category: "General"
-        };
+        throw error;
     }
 };
 
