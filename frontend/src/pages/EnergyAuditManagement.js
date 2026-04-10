@@ -10,7 +10,6 @@ const EnergyAuditManagement = () => {
     const [loading, setLoading] = useState(false);
     const [activeAudit, setActiveAudit] = useState(null);
     const [showForm, setShowForm] = useState(false);
-    const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState('summary');
     const [isSimulating, setIsSimulating] = useState(false);
     const [simulationResult, setSimulationResult] = useState(null);
@@ -270,6 +269,7 @@ const EnergyAuditManagement = () => {
             setAssistantMsg(step.question);
             speak(step.question);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [guidedStep, isGuided, showForm]);
 
     const [isEditing, setIsEditing] = useState(null);
@@ -289,7 +289,7 @@ const EnergyAuditManagement = () => {
                 setActiveAudit(response.data[0]);
             }
         } catch (err) {
-            setError('Failed to fetch audits');
+            console.error('Failed to fetch audits');
             if (err.response?.status === 401) navigate('/user-management');
         } finally {
             setLoading(false);
@@ -340,10 +340,9 @@ const EnergyAuditManagement = () => {
 
     const handleCreateAudit = async (e) => {
         if (e) e.preventDefault();
-        setError('');
         try {
             if (!form.totalUnits || form.selectedAppliances.length === 0) {
-                setError('Please provide usage units and select appliances');
+                console.error('Please provide usage units and select appliances');
                 return;
             }
 
@@ -370,7 +369,7 @@ const EnergyAuditManagement = () => {
             setForm({ month: new Date().toISOString().slice(0, 7), totalUnits: '', householdSize: 1, peakUsage: 'Day', selectedAppliances: [] });
             setActiveTab('summary');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to process energy audit');
+            console.error(err.response?.data?.message || 'Failed to process energy audit');
         }
     };
 
