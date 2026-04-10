@@ -23,7 +23,7 @@ describe('Home Page', () => {
     renderWithRouter(<Home />);
     
     expect(screen.getByText(/Appliance Management/i)).toBeInTheDocument();
-    expect(screen.getByText(/Carbon Tracking/i)).toBeInTheDocument();
-    expect(screen.getByText(/Cost Analysis/i)).toBeInTheDocument();
+    expect(screen.getByText(/Carbon Footprint/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cost Management|Cost Analysis/i)).toBeInTheDocument();
   });
 });

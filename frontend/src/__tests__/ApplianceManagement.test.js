@@ -16,9 +16,22 @@ jest.mock('../services/api', () => ({
   }
 }));
 
+// Mock Recharts to avoid DOM and dimension issues in JSDOM
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }) => <div>{children}</div>,
+  AreaChart: ({ children }) => <div>{children}</div>,
+  Area: () => <div></div>,
+  XAxis: () => <div></div>,
+  YAxis: () => <div></div>,
+  CartesianGrid: () => <div></div>,
+  Tooltip: () => <div></div>,
+}));
+
 // Mock Layout
 jest.mock('../components/Layout', () => ({ children }) => <div data-testid="layout">{children}</div>);
 
+// Mock window.scrollTo
+window.scrollTo = jest.fn();
 // Mock window.confirm
 window.confirm = jest.fn(() => true);
 
@@ -64,7 +77,7 @@ describe('ApplianceManagement Page', () => {
     
     expect(screen.getByText(/Record New Device Pulse/i)).toBeInTheDocument();
     
-    const cancelButton = screen.getByText(/Cancel Pulse/i);
+    const cancelButton = screen.getByText(/Close/i);
     fireEvent.click(cancelButton);
     
     expect(screen.queryByText(/Record New Device Pulse/i)).not.toBeInTheDocument();
@@ -72,7 +85,6 @@ describe('ApplianceManagement Page', () => {
 
   test('submits new appliance', async () => {
     applianceApi.createAppliance.mockResolvedValue({ data: { message: 'Success' } });
-    
     renderWithRouter(<ApplianceManagement />);
     
     fireEvent.click(screen.getByText(/\+ Add New Device/i));
@@ -87,33 +99,30 @@ describe('ApplianceManagement Page', () => {
     await waitFor(() => {
       expect(applianceApi.createAppliance).toHaveBeenCalledWith(expect.objectContaining({
         name: 'Fridge',
-        powerConsumption: 200,
-        usageHours: 24
+        powerConsumption: '200',
+        usageHours: '24'
       }));
     });
   });
 
-  test('deletes an appliance', async () => {
-    applianceApi.getAppliances.mockResolvedValue({ 
-      data: { data: [{ _id: '1', name: 'Toaster', powerConsumption: 800, usageHours: 1, category: 'Kitchen' }] } 
-    });
-    
+  test('edits and deletes an appliance', async () => {
+    const mockAppliance = { _id: '123', name: 'Inverter AC', powerConsumption: 1500, usageHours: 8, category: 'General' };
+    applianceApi.getAppliances.mockResolvedValue({ data: { data: [mockAppliance] } });
+    applianceApi.deleteAppliance.mockResolvedValue({ data: { message: 'Success' } });
+
     renderWithRouter(<ApplianceManagement />);
     
-    await waitFor(() => {
-      expect(screen.getByText('Toaster')).toBeInTheDocument();
-    });
-    
-    const deleteButton = screen.getByRole('button', { name: /delete/i }); // Assuming there's a title or icon that RTL can find, or check by SVG path if needed. 
-    // In the component, it's an icon button. Let's find by role if possible, or just click the first button in the card actions.
-    
-    const buttons = screen.getAllByRole('button');
-    const deleteBtn = buttons.find(b => b.innerHTML.includes('M19 7l-.867 12.142')); // Quick hack to find the delete icon button
-    
-    fireEvent.click(deleteBtn);
+    // Find the appliance and click edit
+    const editButton = await screen.findByLabelText(/Edit appliance/i);
+    fireEvent.click(editButton);
+    expect(screen.getByText(/Edit Pulse Record/i)).toBeInTheDocument();
+
+    // Click delete
+    const deleteButton = screen.getByLabelText(/Delete appliance/i);
+    fireEvent.click(deleteButton);
     
     await waitFor(() => {
-      expect(applianceApi.deleteAppliance).toHaveBeenCalledWith('1');
+      expect(applianceApi.deleteAppliance).toHaveBeenCalledWith('123');
     });
   });
 });

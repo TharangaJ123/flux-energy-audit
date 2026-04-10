@@ -7,16 +7,28 @@ import carbonService from '../services/carbonFootprint.service';
 // Mock the service
 jest.mock('../services/carbonFootprint.service');
 
-// Mock Recharts to avoid DOM issues with ResponsiveContainer
+// Mock Recharts to avoid DOM and dimension issues in JSDOM
 jest.mock('recharts', () => {
-  const OriginalRecharts = jest.requireActual('recharts');
   return {
-    ...OriginalRecharts,
-    ResponsiveContainer: ({ children }) => <div style={{ width: '800px', height: '400px' }}>{children}</div>,
+    ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
+    LineChart: ({ children }) => <div data-testid="line-chart">{children}</div>,
+    AreaChart: ({ children }) => <div data-testid="area-chart">{children}</div>,
+    BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
+    PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
+    XAxis: () => <div />,
+    YAxis: () => <div />,
+    CartesianGrid: () => <div />,
+    Tooltip: () => <div />,
+    Legend: () => <div />,
+    Line: () => <div />,
+    Area: () => <div />,
+    Bar: () => <div />,
+    Cell: () => <div />,
+    Pie: () => <div />,
   };
 });
 
-// Mock Layout component if necessary (or just let it render)
+// Mock Layout component 
 jest.mock('../components/Layout', () => ({ children }) => <div data-testid="layout">{children}</div>);
 
 const renderWithRouter = (ui) => {
@@ -38,6 +50,7 @@ describe('CarbonTracker Page', () => {
     expect(screen.getByText(/Carbon Footprint Tracker/i)).toBeInTheDocument();
     
     await waitFor(() => {
+      // Use querySelector or more specific match for the value
       expect(screen.getByText(/100.0/)).toBeInTheDocument();
       expect(screen.getByText(/Moderate/i)).toBeInTheDocument();
     });
@@ -64,8 +77,9 @@ describe('CarbonTracker Page', () => {
 
     expect(screen.getByText(/New Footprint Record/i)).toBeInTheDocument();
 
-    const electricityInput = screen.getByPlaceholderText('0'); // This identifies electricity in my version
-    fireEvent.change(electricityInput, { target: { value: '100' } });
+    // Electricity is the first '0' placeholder
+    const placeholders = screen.getAllByPlaceholderText('0');
+    fireEvent.change(placeholders[0], { target: { value: '100' } });
 
     const submitButton = screen.getByText(/Analyze & Save/i);
     fireEvent.click(submitButton);
@@ -76,18 +90,28 @@ describe('CarbonTracker Page', () => {
   });
 
   test('switches tabs', async () => {
-    carbonService.getRecords.mockResolvedValue([]);
+    const mockRecords = [
+        { _id: '1', month: '1', year: 2024, co2Emission: 100, status: 'Moderate', electricity: 50, gasData: { amounts: {} }, transportData: { distances: {} } }
+    ];
+    carbonService.getRecords.mockResolvedValue(mockRecords);
     renderWithRouter(<CarbonTracker />);
+
+    // Wait for initial load
+    await screen.findByText(/100.0/);
 
     const trendTab = screen.getByText(/Trend Graph/i);
     fireEvent.click(trendTab);
 
-    expect(screen.getByText(/Emissions Trend/i)).toBeInTheDocument();
+    // Header outside the chart
+    expect(await screen.findByText(/Emissions Trend/i)).toBeInTheDocument();
 
     const breakdownTab = screen.getByText(/Breakdown Graph/i);
     fireEvent.click(breakdownTab);
 
-    expect(screen.queryByText(/Emissions Trend/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Emissions Distribution/i)).toBeInTheDocument();
+    // Wait for the trend header to disappear and the distribution header to appear
+    await waitFor(() => {
+        expect(screen.queryByText(/Emissions Trend/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/Emissions Distribution/i)).toBeInTheDocument();
+    });
   });
 });
