@@ -4,7 +4,7 @@ import carbonService from '../services/carbonFootprint.service';
 import Layout from '../components/Layout';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, PieChart, Pie, Cell
+  BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
 
 const GAS_TYPES = [
@@ -182,20 +182,6 @@ const CarbonTracker = () => {
 
     return tips;
   };
-
-  const MonthSelect = ({ value, onChange }) => (
-    <select
-      value={value}
-      onChange={onChange}
-      className="w-full px-4 py-3 bg-blue-50/50 border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-black"
-    >
-      {Array.from({ length: 12 }, (_, i) => (
-        <option key={i + 1} value={String(i + 1)}>
-          {new Date(2024, i).toLocaleString('default', { month: 'long' })}
-        </option>
-      ))}
-    </select>
-  );
 
   const getStatusColor = (status) => {
     switch (status) {
