@@ -1,0 +1,56 @@
+config:
+  target: "http://127.0.0.1:5000"
+  phases:
+    - duration: 30
+      arrivalRate: 2
+      rampTo: 10
+      name: "Warm up and ramp"
+    - duration: 30
+      arrivalRate: 10
+      name: "Sustained load"
+  defaults:
+    headers:
+      Content-Type: application/json
+
+scenarios:
+  - name: "Appliance Management Performance Test"
+    flow:
+      - post:
+          url: "/api/appliances"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+          json:
+            name: "Performance Test Device - {{ $uuid }}"
+            powerConsumption: 500
+            usageHours: 12
+            category: "StressTest"
+          capture:
+            - json: "$.data._id"
+              as: "applianceId"
+      - get:
+          url: "/api/appliances"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+      - get:
+          url: "/api/appliances/{{ applianceId }}"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+      - get:
+          url: "/api/appliances/audit?city=Colombo"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+      - get:
+          url: "/api/appliances/stats"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+      - put:
+          url: "/api/appliances/{{ applianceId }}"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+          json:
+            name: "Updated Performance Device"
+            powerConsumption: 600
+      - delete:
+          url: "/api/appliances/{{ applianceId }}"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
