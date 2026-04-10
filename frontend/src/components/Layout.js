@@ -1,3 +1,4 @@
+// Shared page shell that keeps navigation and footer consistent across sections.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';

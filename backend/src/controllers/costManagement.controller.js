@@ -9,8 +9,11 @@ const path = require('path');
 const normalizeCreatePayload = (body) => ({
     month: typeof body.month === 'string' ? parseInt(body.month, 10) : body.month,
     year: typeof body.year === 'string' ? parseInt(body.year, 10) : body.year,
-    electricityCost:
-        typeof body.electricityCost === 'string' ? parseFloat(body.electricityCost) : body.electricityCost,
+    utilityType: body.utilityType || 'electricity',
+    amount:
+        typeof body.amount === 'string'
+            ? parseFloat(body.amount)
+            : body.amount || (typeof body.electricityCost === 'string' ? parseFloat(body.electricityCost) : body.electricityCost),
     notes: body.notes,
 });
 
@@ -25,9 +28,12 @@ const normalizeUpdatePayload = (body) => {
     if (body.year !== undefined) {
         payload.year = typeof body.year === 'string' ? parseInt(body.year, 10) : body.year;
     }
-    if (body.electricityCost !== undefined) {
-        payload.electricityCost =
-            typeof body.electricityCost === 'string' ? parseFloat(body.electricityCost) : body.electricityCost;
+    if (body.utilityType !== undefined) {
+        payload.utilityType = body.utilityType;
+    }
+    if (body.amount !== undefined || body.electricityCost !== undefined) {
+        const rawAmount = body.amount ?? body.electricityCost;
+        payload.amount = typeof rawAmount === 'string' ? parseFloat(rawAmount) : rawAmount;
     }
 
     return payload;
@@ -236,6 +242,17 @@ const downloadDocument = async (req, res) => {
     }
 };
 
+// Get AI-driven spending insights.
+const getAIInsights = async (req, res) => {
+    try {
+        const insights = await costService.getAIInsights(req.user._id);
+        res.status(200).json(insights);
+    } catch (error) {
+        //console.error('AI Insights Error:', error.message);
+        res.status(500).json({ message: 'Error generating AI insights' });
+    }
+};
+
 module.exports = {
     create,
     list,
@@ -244,4 +261,5 @@ module.exports = {
     remove,
     estimate,
     downloadDocument,
+    getAIInsights,
 };

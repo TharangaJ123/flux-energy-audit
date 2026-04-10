@@ -1,3 +1,4 @@
+// React client bootstrap for mounting the single-page application.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

@@ -1,3 +1,4 @@
+// Top-level client router that maps product sections to their page components.
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CostManagement from './pages/CostManagement';
