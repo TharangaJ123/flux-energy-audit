@@ -44,15 +44,15 @@ const Layout = ({ children }) => {
                                 <li><Link to="/user-management" className="hover:text-cyan-700 transition-colors">My Profile</Link></li>
                                 <li><Link to="/login" className="hover:text-cyan-700 transition-colors">Portal Login</Link></li>
                                 <li><Link to="/register" className="hover:text-cyan-700 transition-colors">Sign Up Now</Link></li>
-                                <li><a href="#" className="hover:text-cyan-700 transition-colors">Documentation</a></li>
+                                <li><Link to="#!" className="hover:text-cyan-700 transition-colors">Documentation</Link></li>
                             </ul>
                         </div>
                     </div>
                     <div className="border-t border-gray-100 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center text-sm text-gray-400 gap-4">
                         <p>© {new Date().getFullYear()} FluxEnergy Platforms. Sri Lanka. Developed for domestic efficiency.</p>
                         <div className="flex gap-8">
-                            <a href="#" className="hover:text-teal-600">Privacy Policy</a>
-                            <a href="#" className="hover:text-teal-600">Terms of Service</a>
+                            <Link to="#!" className="hover:text-teal-600">Privacy Policy</Link>
+                            <Link to="#!" className="hover:text-teal-600">Terms of Service</Link>
                         </div>
                     </div>
                 </div>
