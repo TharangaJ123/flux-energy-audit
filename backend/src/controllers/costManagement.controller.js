@@ -248,7 +248,7 @@ const getAIInsights = async (req, res) => {
         const insights = await costService.getAIInsights(req.user._id);
         res.status(200).json(insights);
     } catch (error) {
-        console.error('AI Insights Error:', error.message);
+        //console.error('AI Insights Error:', error.message);
         res.status(500).json({ message: 'Error generating AI insights' });
     }
 };
