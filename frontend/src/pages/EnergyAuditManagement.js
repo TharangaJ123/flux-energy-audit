@@ -1,4 +1,3 @@
-// Energy audit workspace for creating audits, simulations, and AI-assisted Q&A.
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { energyAuditApi, applianceApi } from '../services/api';
@@ -529,40 +528,11 @@ const EnergyAuditManagement = () => {
                                     </div>
                                 </div>
 
-                                {error && (
-                                    <div className="bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-2xl mb-8 shadow-sm flex items-center gap-3 animate-in fade-in">
-                                        <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <span className="font-medium">{error}</span>
-                                    </div>
-                                )}
-
-                                <form onSubmit={handleCreateAudit} className="space-y-16">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                        <div className="space-y-3">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Units Used (kWh)</label>
-                                            <input type="number" step="0.1" value={form.totalUnits} onChange={e => setForm({ ...form, totalUnits: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-2xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">People</label>
-                                            <input type="number" value={form.householdSize} onChange={e => setForm({ ...form, householdSize: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-2xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Month</label>
-                                            <input type="month" value={form.month} onChange={e => setForm({ ...form, month: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Peak Usage</label>
-                                            <select value={form.peakUsage} onChange={e => setForm({ ...form, peakUsage: e.target.value })} className="w-full px-8 py-5 bg-gray-50 border border-gray-100 rounded-3xl text-xl font-bold focus:bg-white focus:ring-4 focus:ring-teal-50 outline-none transition-all appearance-none cursor-pointer">
-                                                <option value="Day">Day Focus (6am-6pm)</option>
-                                                <option value="Night">Peak Focus (6pm-12am)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-8">
-                                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 font-asap">Active Appliances</label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {appliances.map(app => (
+                                {isGuided ? (
+                                    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        {/* Assistant Interface */}
+                                        <div className="flex flex-col items-center text-center space-y-8 py-10">
+                                            <div className="relative">
                                                 <div
                                                     onClick={() => !isSpeaking && listen()}
                                                     className={`w-24 h-24 bg-teal-600 rounded-3xl flex items-center justify-center text-white shadow-2xl relative z-10 transition-all cursor-pointer hover:scale-105 active:scale-95 ${isSpeaking ? 'scale-110' : ''} ${isListening ? 'bg-rose-500 shadow-rose-200' : ''}`}

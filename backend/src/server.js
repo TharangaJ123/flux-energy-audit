@@ -1,12 +1,12 @@
-// Process entrypoint that loads configuration, connects to MongoDB, and starts the HTTP server.
+const express = require('express');
 const dotenv = require('dotenv');
+const cors = require('cors');
 const dns = require('dns');
 
 // Set DNS servers to resolve MongoDB SRV records
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = require('./config/db');
-const createApp = require('./app');
 
 // Load env vars
 dotenv.config();
