@@ -6,3 +6,22 @@
 import '@testing-library/jest-dom';
 
 jest.mock('react-router-dom', () => require('./test-utils/reactRouterDomMock'), { virtual: true });
+
+// Mock axios to avoid ESM import issues in JSDOM
+jest.mock('axios', () => ({
+  create: jest.fn(() => ({
+    interceptors: {
+      request: { use: jest.fn(), eject: jest.fn() },
+      response: { use: jest.fn(), eject: jest.fn() },
+    },
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
+  })),
+  get: jest.fn(),
+  post: jest.fn(),
+  put: jest.fn(),
+  delete: jest.fn(),
+  defaults: { headers: { common: {} } },
+}));
