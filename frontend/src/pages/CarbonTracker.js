@@ -184,8 +184,6 @@ const CarbonTracker = () => {
     return tips;
   };
 
-
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'Low': return 'text-emerald-500 bg-emerald-50 border-emerald-200';
