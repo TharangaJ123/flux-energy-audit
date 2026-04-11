@@ -2,6 +2,7 @@
   "name": "flux-energy-audit",
   "version": "1.0.0",
   "description": "Root package to manage backend and frontend testing",
+  "main": "backend/src/server.js",
   "scripts": {
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test",
