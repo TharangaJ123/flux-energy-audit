@@ -15,13 +15,17 @@ const ApplianceManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [city, setCity] = useState('Colombo');
+  const [cityInput, setCityInput] = useState('Colombo');
 
   useEffect(() => {
     const detectLocation = async () => {
       try {
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
-        if (data.city) setCity(data.city);
+        if (data.city) {
+          setCity(data.city);
+          setCityInput(data.city);
+        }
       } catch (err) {
         console.error('Location detection failed:', err);
       }
@@ -38,14 +42,14 @@ const ApplianceManagement = () => {
 
   const categories = ['General', 'Kitchen', 'Cooling', 'Entertainment', 'Cleaning', 'Office', 'Other'];
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (targetCity = city) => {
     setLoading(true);
     setError('');
     try {
       const [applianceRes, statsRes, auditRes] = await Promise.all([
         applianceApi.getAppliances(),
         applianceApi.getApplianceStats(),
-        applianceApi.getEnergyAudit(city)
+        applianceApi.getEnergyAudit(targetCity)
       ]);
       setAppliances(applianceRes.data.data || []);
       setStats(statsRes.data.data || null);
@@ -209,12 +213,20 @@ const ApplianceManagement = () => {
                   <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm">
                     <input
                       type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      value={cityInput}
+                      onChange={(e) => setCityInput(e.target.value)}
                       placeholder="Switch City..."
                       className="px-6 py-3 bg-gray-50 border-0 rounded-xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-teal-100"
                     />
-                    <button onClick={fetchData} className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-md hover:bg-teal-700">Sync</button>
+                    <button 
+                      onClick={() => {
+                        setCity(cityInput);
+                        fetchData(cityInput);
+                      }} 
+                      className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-md hover:bg-teal-700"
+                    >
+                      Sync
+                    </button>
                   </div>
                 </div>
 
