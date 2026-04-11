@@ -1,3 +1,4 @@
+// Centralized API client and feature-specific request helpers for the frontend.
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -9,7 +10,7 @@ export const api = axios.create({
   },
 });
 
-// Add token to requests
+// Centralize auth header attachment so feature modules only express intent, not token plumbing.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -32,6 +33,7 @@ export const userApi = {
 // Cost Management APIs
 export const costApi = {
   createCost: (costData) => {
+    // Cost uploads can include bill files, so switch to multipart only when FormData is provided.
     if (costData instanceof FormData) {
       return api.post('/costs', costData, {
         headers: {
@@ -44,6 +46,7 @@ export const costApi = {
   getCosts: () => api.get('/costs'),
   getCostById: (id) => api.get(`/costs/${id}`),
   updateCost: (id, costData) => {
+    // Mirror create behavior so edits with replacement documents reuse the same API surface.
     if (costData instanceof FormData) {
       return api.put(`/costs/${id}`, costData, {
         headers: {
@@ -54,6 +57,7 @@ export const costApi = {
     return api.put(`/costs/${id}`, costData);
   },
   deleteCost: (id) => api.delete(`/costs/${id}`),
+  getAIInsights: () => api.get('/costs/ai-insights'),
   downloadCostDocument: (id) => api.get(`/costs/${id}/document`, { responseType: 'blob' }),
   estimateCost: (estimationData) => api.post('/costs/estimate', estimationData),
   createGoal: (goalData) => api.post('/costs/goals', goalData),

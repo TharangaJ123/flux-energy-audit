@@ -35,15 +35,15 @@ const EnergyAuditManagement = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isListening, setIsListening] = useState(false);
 
-    let recognitionInstance = null;
+    const recognitionRef = useRef(null);
 
     const speak = (text) => {
         if (!window.speechSynthesis) return;
 
         // STOP LISTENING BEFORE SPEAKING
-        if (recognitionInstance) {
+        if (recognitionRef.current) {
             try {
-                recognitionInstance.stop();
+                recognitionRef.current.stop();
             } catch (e) { }
         }
 
@@ -72,7 +72,7 @@ const EnergyAuditManagement = () => {
         if (isListening) return;
 
         const recognition = new SpeechRecognition();
-        recognitionInstance = recognition;
+        recognitionRef.current = recognition;
 
         recognition.lang = 'en-US';
         recognition.interimResults = false;
@@ -313,7 +313,7 @@ const EnergyAuditManagement = () => {
 
     useEffect(() => {
         if (activeTab === 'assistant') {
-            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }, [chatMessages, activeTab]);
 
@@ -365,7 +365,19 @@ const EnergyAuditManagement = () => {
                 setActiveAudit(response.data);
             }
             setShowForm(false);
-            setIsGuided(false); // Make sure to reset guided mode on finish
+            setIsGuided(false);
+
+            // Stop all audio: cancel speech synthesis and speech recognition
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch (e) { /* already stopped */ }
+                recognitionRef.current = null;
+            }
+            setIsSpeaking(false);
+            setIsListening(false);
+
             setForm({ month: new Date().toISOString().slice(0, 7), totalUnits: '', householdSize: 1, peakUsage: 'Day', selectedAppliances: [] });
             setActiveTab('summary');
         } catch (err) {
@@ -834,8 +846,8 @@ const EnergyAuditManagement = () => {
                                     )}
 
                                     {activeTab === 'assistant' && (
-                                        <div className="bg-white rounded-[4rem] shadow-premium border border-gray-100 flex flex-col h-[700px] animate-in fade-in duration-700 overflow-hidden">
-                                            <div className="p-10 border-b border-gray-50 flex items-center gap-6">
+                                        <div className="bg-white rounded-[4rem] shadow-premium border border-gray-100 flex flex-col h-[700px] max-h-[700px] animate-in fade-in duration-700 overflow-hidden">
+                                            <div className="p-10 border-b border-gray-50 flex items-center gap-6 flex-shrink-0">
                                                 <div className="w-12 h-12 bg-teal-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold italic shadow-lg">P</div>
                                                 <div>
                                                     <h3 className="text-xl font-bold text-gray-900">Flux Assistant</h3>
@@ -843,7 +855,7 @@ const EnergyAuditManagement = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="flex-grow p-12 overflow-y-auto space-y-10 custom-scrollbar bg-dim/30">
+                                            <div className="flex-1 min-h-0 p-12 overflow-y-auto space-y-10 custom-scrollbar bg-dim/30">
                                                 {chatMessages.length === 0 && (
                                                     <div className="h-full flex flex-col items-center justify-center text-center opacity-40 px-24">
                                                         <p className="text-3xl font-bold italic mb-6 text-gray-400">"What are my peak slab impacts?"</p>
@@ -869,7 +881,7 @@ const EnergyAuditManagement = () => {
                                                 <div ref={chatEndRef} />
                                             </div>
 
-                                            <form onSubmit={handleChat} className="p-10 bg-white border-t border-gray-50 flex gap-6">
+                                            <form onSubmit={handleChat} className="p-10 bg-white border-t border-gray-50 flex gap-6 flex-shrink-0">
                                                 <input
                                                     value={userInput}
                                                     onChange={e => setUserInput(e.target.value)}

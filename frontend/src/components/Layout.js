@@ -1,3 +1,4 @@
+// Shared page shell that keeps navigation and footer consistent across sections.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -44,7 +45,7 @@ const Layout = ({ children }) => {
                                 <li><Link to="/user-management" className="hover:text-cyan-700 transition-colors">My Profile</Link></li>
                                 <li><Link to="/login" className="hover:text-cyan-700 transition-colors">Portal Login</Link></li>
                                 <li><Link to="/register" className="hover:text-cyan-700 transition-colors">Sign Up Now</Link></li>
-                                <li><Link to="#!" className="hover:text-cyan-700 transition-colors">Documentation</Link></li>
+                                <li><Link to="/documentation" className="hover:text-cyan-700 transition-colors">Documentation</Link></li>
                             </ul>
                         </div>
                     </div>

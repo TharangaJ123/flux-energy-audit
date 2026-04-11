@@ -1,8 +1,10 @@
-const ElectricityCost = require('../models/costManagement.model');
+const UtilityCost = require('../models/costManagement.model');
+const CostGoal = require('../models/costGoal.model');
 const { runInTransaction } = require('../util/transaction');
 const tariffApiService = require('./tariffApiService');
+const geminiService = require('./geminiService');
 
-// Electricity cost business logic.
+// Utility cost business logic.
 
 const tariffPlans = {
     CEB: [
@@ -74,6 +76,94 @@ const tariffPlans = {
 const roundAmount = (value) => Number(value.toFixed(2));
 const MAX_FUTURE_MONTHS_FOR_BILLING = 1;
 
+const getMonthKey = (cost) => `${cost.year}-${String(cost.month).padStart(2, '0')}`;
+
+const createLocalCostInsights = ({ costs, goals }) => {
+    // Use a short recent window so the fallback adviser reacts to new bills instead of averaging the full history.
+    const latestCosts = costs.slice(0, 6);
+    const totalSpend = latestCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
+    const avgSpend = latestCosts.length ? totalSpend / latestCosts.length : 0;
+    const latestCost = latestCosts[0] || null;
+
+    const spendingByUtility = latestCosts.reduce((acc, cost) => {
+        const utilityType = cost.utilityType || 'General';
+        acc[utilityType] = (acc[utilityType] || 0) + Number(cost.amount || 0);
+        return acc;
+    }, {});
+
+    const highlightCategory =
+        Object.entries(spendingByUtility).sort((a, b) => b[1] - a[1])[0]?.[0] || 'General';
+
+    // Aggregate by billing month first so the trend compares recent month totals instead of individual bill rows.
+    const costsByMonth = latestCosts.reduce((acc, cost) => {
+        const monthKey = getMonthKey(cost);
+        acc[monthKey] = (acc[monthKey] || 0) + Number(cost.amount || 0);
+        return acc;
+    }, {});
+
+    const orderedMonths = Object.entries(costsByMonth).sort((a, b) => b[0].localeCompare(a[0]));
+    const currentMonthTotal = orderedMonths[0]?.[1] || 0;
+    const previousMonthTotal = orderedMonths[1]?.[1] || 0;
+
+    const matchingGoal = latestCost
+        ? goals.find((goal) => !goal.utilityType || goal.utilityType === latestCost.utilityType)
+        : null;
+    const goalLimit = Number(matchingGoal?.targetAmount || matchingGoal?.amount || 0);
+
+    let status = 'on-track';
+    if (goalLimit > 0 && currentMonthTotal > goalLimit) {
+        status = currentMonthTotal > goalLimit * 1.15 ? 'critical' : 'warning';
+    } else if (goalLimit > 0 && currentMonthTotal <= goalLimit * 0.9) {
+        status = 'excellent';
+    }
+
+    const trendText =
+        previousMonthTotal > 0
+            ? currentMonthTotal > previousMonthTotal
+                ? `Your latest monthly utility total is up by ${roundAmount(((currentMonthTotal - previousMonthTotal) / previousMonthTotal) * 100)}% compared with the previous month.`
+                : `Your latest monthly utility total is down by ${roundAmount(((previousMonthTotal - currentMonthTotal) / previousMonthTotal) * 100)}% compared with the previous month.`
+            : 'More monthly history will make the adviser more precise.';
+
+    const summaryParts = [
+        `Based on your last ${latestCosts.length} recorded bill${latestCosts.length === 1 ? '' : 's'}, your average spend is ${roundAmount(avgSpend)}.`,
+        highlightCategory !== 'General'
+            ? `${highlightCategory} is currently the biggest cost category in your recent records.`
+            : 'Your recent records are enough to provide a basic spending snapshot.',
+        trendText,
+    ];
+
+    const recommendations = [];
+
+    if (highlightCategory && highlightCategory !== 'General') {
+        recommendations.push(`Review your recent ${highlightCategory.toLowerCase()} bills first, since that category is contributing the largest share of your recorded spend.`);
+    }
+
+    if (goalLimit > 0) {
+        if (currentMonthTotal > goalLimit) {
+            recommendations.push(`Your current recorded monthly total is above your goal of ${roundAmount(goalLimit)}. Reduce discretionary usage or adjust the goal to match actual billing patterns.`);
+        } else {
+            recommendations.push(`You are within your recorded budget goal of ${roundAmount(goalLimit)}. Keep tracking monthly bills to confirm the trend holds.`);
+        }
+    } else {
+        recommendations.push('Set a monthly spending goal so the adviser can flag over-budget periods earlier.');
+    }
+
+    recommendations.push('Track at least three consecutive months for each utility category to improve trend quality and seasonal comparisons.');
+
+    if (latestCost?.notes) {
+        recommendations.push('Use bill notes consistently for events like appliance purchases, travel, or leaks so unusual spikes are easier to explain later.');
+    } else {
+        recommendations.push('Add short notes when a bill spikes so later comparisons have useful context.');
+    }
+
+    return {
+        summary: summaryParts.join(' '),
+        recommendations: recommendations.slice(0, 4),
+        status,
+        highlight_category: highlightCategory,
+    };
+};
+
 const isBeyondAllowedBillingWindow = ({ month, year }) => {
     const billingDate = new Date(year, month - 1, 1);
     const now = new Date();
@@ -82,6 +172,7 @@ const isBeyondAllowedBillingWindow = ({ month, year }) => {
 };
 
 const shouldUseExternalTariff = () => process.env.USE_TARIFF_API === 'true' || !!process.env.TARIFF_API_URL;
+const shouldUseAiTariff = () => process.env.USE_AI_TARIFF === 'true';
 
 const pickVersionedLocalTariff = ({ provider, month, year }) => {
     const versions = tariffPlans[provider];
@@ -112,6 +203,29 @@ const getTariffPlan = async ({ provider, month, year }) => {
     }
     const localPlan = localTariffVersion.plan;
     const localEffectiveFrom = localTariffVersion.effectiveFrom;
+
+    // Check if AI-driven tariff estimation is enabled.
+    if (shouldUseAiTariff()) {
+        try {
+            const aiPlan = await geminiService.getAITariffPlan({ provider, month, year });
+
+            // The billing engine expects an open-ended final slab to use Infinity rather than null.
+            const normalizedSlabs = aiPlan.slabs.map((slab) => ({
+                ...slab,
+                to: slab.to === null ? Infinity : Number(slab.to),
+                from: Number(slab.from),
+                ratePerUnit: Number(slab.ratePerUnit),
+            }));
+
+            return {
+                plan: { ...aiPlan, slabs: normalizedSlabs },
+                source: 'ai',
+                effectiveFrom: aiPlan.effectiveFrom || null,
+            };
+        } catch (error) {
+            console.error('AI tariff fetch failed, falling back to standard sources:', error.message);
+        }
+    }
 
     if (!shouldUseExternalTariff()) {
         return {
@@ -149,6 +263,7 @@ const estimateCostByTariff = async ({ units, month, year, provider, peakUnits = 
     const breakdown = [];
     let energyCharge = 0;
 
+    // Walk each slab in order and exhaust units progressively, matching how stepped utility tariffs are billed.
     for (const slab of plan.slabs) {
         if (remainingUnits <= 0) {
             break;
@@ -182,14 +297,14 @@ const estimateCostByTariff = async ({ units, month, year, provider, peakUnits = 
     breakdown.push(
         {
             type: 'tou',
-            label: 'peak',
+            label: peakUnits > 0 ? 'Peak' : 'N/A',
             units: roundAmount(peakUnits),
             ratePerUnit: plan.peakRate,
             amount: roundAmount(peakCharge),
         },
         {
             type: 'tou',
-            label: 'offPeak',
+            label: offPeakUnits > 0 ? 'Off-Peak' : 'N/A',
             units: roundAmount(offPeakUnits),
             ratePerUnit: plan.offPeakRate,
             amount: roundAmount(offPeakCharge),
@@ -230,25 +345,26 @@ const estimateCostByTariff = async ({ units, month, year, provider, peakUnits = 
     };
 };
 
-// Create a new electricity cost entry with duplicate-period protection.
+// Create a new utility cost entry with duplicate-period-type protection.
 const createCost = async (userId, costData) => {
     return await runInTransaction(async (session) => {
-        const { month, year } = costData;
+        const { month, year, utilityType = 'electricity' } = costData;
 
         if (isBeyondAllowedBillingWindow({ month, year })) {
             throw new Error('Billing month cannot be more than 1 month in the future');
         }
 
-        const existing = await ElectricityCost.findOne({ user: userId, month, year }).session(session);
+        const existing = await UtilityCost.findOne({ user: userId, month, year, utilityType }).session(session);
         if (existing) {
-            throw new Error('Cost for this month already exists');
+            throw new Error(`Cost for ${utilityType} in this month already exists`);
         }
 
-        const cost = new ElectricityCost({
+        const cost = new UtilityCost({
             user: userId,
             month,
             year,
-            electricityCost: costData.electricityCost,
+            utilityType,
+            amount: costData.amount,
             notes: costData.notes,
             document: costData.document,
         });
@@ -258,24 +374,24 @@ const createCost = async (userId, costData) => {
     });
 };
 
-// Retrieve all electricity costs for a user.
+// Retrieve all utility costs for a user.
 const getCosts = async (userId) => {
-    return await ElectricityCost.find({ user: userId }).sort({ year: -1, month: -1 });
+    return await UtilityCost.find({ user: userId }).sort({ year: -1, month: -1 });
 };
 
-// Retrieve a single electricity cost by id.
+// Retrieve a single utility cost by id.
 const getCostById = async (userId, costId) => {
-    const cost = await ElectricityCost.findOne({ _id: costId, user: userId });
+    const cost = await UtilityCost.findOne({ _id: costId, user: userId });
     if (!cost) {
         throw new Error('Cost not found');
     }
     return cost;
 };
 
-// Update a cost entry while preventing month-year duplicates.
+// Update a cost entry while preventing month-year-type duplicates.
 const updateCost = async (userId, costId, updateData) => {
     return await runInTransaction(async (session) => {
-        const cost = await ElectricityCost.findOne({ _id: costId, user: userId }).session(session);
+        const cost = await UtilityCost.findOne({ _id: costId, user: userId }).session(session);
 
         if (!cost) {
             throw new Error('Cost not found');
@@ -283,21 +399,23 @@ const updateCost = async (userId, costId, updateData) => {
 
         const newMonth = updateData.month ?? cost.month;
         const newYear = updateData.year ?? cost.year;
+        const newType = updateData.utilityType ?? cost.utilityType;
 
         if (isBeyondAllowedBillingWindow({ month: newMonth, year: newYear })) {
             throw new Error('Billing month cannot be more than 1 month in the future');
         }
 
-        if (newMonth !== cost.month || newYear !== cost.year) {
-            const existing = await ElectricityCost.findOne({
+        if (newMonth !== cost.month || newYear !== cost.year || newType !== cost.utilityType) {
+            const existing = await UtilityCost.findOne({
                 user: userId,
                 month: newMonth,
                 year: newYear,
+                utilityType: newType,
                 _id: { $ne: costId },
             }).session(session);
 
             if (existing) {
-                throw new Error('Cost for this month already exists');
+                throw new Error(`Cost for ${newType} in this month already exists`);
             }
         }
 
@@ -305,7 +423,8 @@ const updateCost = async (userId, costId, updateData) => {
 
         if (updateData.month !== undefined) cost.month = updateData.month;
         if (updateData.year !== undefined) cost.year = updateData.year;
-        if (updateData.electricityCost !== undefined) cost.electricityCost = updateData.electricityCost;
+        if (updateData.utilityType !== undefined) cost.utilityType = updateData.utilityType;
+        if (updateData.amount !== undefined) cost.amount = updateData.amount;
         if (updateData.notes !== undefined) cost.notes = updateData.notes;
         if (updateData.document !== undefined) cost.document = updateData.document;
 
@@ -317,10 +436,10 @@ const updateCost = async (userId, costId, updateData) => {
     });
 };
 
-// Delete one electricity cost entry by id.
+// Delete one utility cost entry by id.
 const deleteCost = async (userId, costId) => {
     return await runInTransaction(async (session) => {
-        const cost = await ElectricityCost.findOne({ _id: costId, user: userId }).session(session);
+        const cost = await UtilityCost.findOne({ _id: costId, user: userId }).session(session);
 
         if (!cost) {
             throw new Error('Cost not found');
@@ -336,6 +455,35 @@ const deleteCost = async (userId, costId) => {
     });
 };
 
+/**
+ * Aggregates user spending and goals to generate AI-driven insights
+ */
+const getAIInsights = async (userId) => {
+    const costs = await UtilityCost.find({ user: userId }).sort({ year: -1, month: -1 }).limit(24);
+    const goals = await CostGoal.find({ user: userId });
+
+    if (costs.length === 0) {
+        return {
+            summary: "I don't have enough spending data to provide personalized insights yet. Start by logging your first utility bill!",
+            recommendations: [
+                "Log at least 3 months of bills for accurate trend analysis.",
+                "Set monthly budget goals to track against your actual spending.",
+                "Categorize your bills correctly (Electricity, Water, etc.) for better breakdown."
+            ],
+            status: "on-track",
+            highlight_category: "General"
+        };
+    }
+
+    try {
+        return await geminiService.generateCostInsights({ costs, goals });
+    } catch (error) {
+        // Keep the dashboard useful even when Gemini is unavailable or misconfigured.
+        console.error('Falling back to local spending adviser:', error.message);
+        return createLocalCostInsights({ costs, goals });
+    }
+};
+
 module.exports = {
     createCost,
     getCosts,
@@ -343,4 +491,5 @@ module.exports = {
     updateCost,
     deleteCost,
     estimateCostByTariff,
+    getAIInsights,
 };

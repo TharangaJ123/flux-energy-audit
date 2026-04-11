@@ -1,3 +1,4 @@
+// Navigation bar that reflects login state from local storage and current route.
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 

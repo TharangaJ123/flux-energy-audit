@@ -1,3 +1,4 @@
+// Authentication and profile page covering registration, login, and account maintenance.
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../services/api';
@@ -222,7 +223,7 @@ const UserManagement = () => {
                                 {activeTab === 'login' ? (
                                     <form onSubmit={handleLogin} className="space-y-12">
                                         <div className="space-y-4">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Email Identity</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Email</label>
                                             <input
                                                 type="email"
                                                 value={loginForm.email}
@@ -233,7 +234,7 @@ const UserManagement = () => {
                                             />
                                         </div>
                                         <div className="space-y-4">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Secure Cipher</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Password</label>
                                             <input
                                                 type="password"
                                                 value={loginForm.password}
@@ -250,7 +251,7 @@ const UserManagement = () => {
                                 ) : (
                                     <form onSubmit={handleRegister} className="space-y-12">
                                         <div className="space-y-4">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Legal Name</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Name</label>
                                             <input
                                                 type="text"
                                                 value={registerForm.name}
@@ -261,7 +262,7 @@ const UserManagement = () => {
                                             />
                                         </div>
                                         <div className="space-y-4">
-                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Email Pulse</label>
+                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Email</label>
                                             <input
                                                 type="email"
                                                 value={registerForm.email}
@@ -329,11 +330,11 @@ const UserManagement = () => {
                                 </div>
 
                                 <div className="pt-16 border-t border-gray-50">
-                                    <h3 className="text-2xl font-bold text-gray-900 mb-12 italic underline decoration-teal-600 decoration-4">Orchestrate Settings</h3>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-12 italic underline decoration-teal-600 decoration-4">Account Settings</h3>
                                     <form onSubmit={handleUpdateProfile} className="space-y-12">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                             <div className="space-y-4">
-                                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Name Definition</label>
+                                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Name</label>
                                                 <input
                                                     type="text"
                                                     value={updateForm.name}
@@ -342,7 +343,7 @@ const UserManagement = () => {
                                                 />
                                             </div>
                                             <div className="space-y-4">
-                                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Immutable Email</label>
+                                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Email</label>
                                                 <input
                                                     type="email"
                                                     value={updateForm.email}
@@ -355,7 +356,7 @@ const UserManagement = () => {
                                         <div className="bg-dim p-12 rounded-[3.5rem] border border-gray-50">
                                             <h4 className="font-bold text-lg text-gray-900 mb-10 flex items-center gap-3">
                                                 <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                                Cipher Update
+                                                Update Password
                                             </h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                                 <div className="space-y-4">
@@ -369,7 +370,7 @@ const UserManagement = () => {
                                                     />
                                                 </div>
                                                 <div className="space-y-4">
-                                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Confirm New</label>
+                                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Confirm Password</label>
                                                     <input
                                                         type="password"
                                                         value={updateForm.confirmNewPassword}
@@ -382,7 +383,7 @@ const UserManagement = () => {
                                         </div>
 
                                         <button type="submit" disabled={loading} className="btn-primary w-full py-6 text-xl">
-                                            {loading ? 'Processing Sync...' : 'Sync Identity Changes'}
+                                            {loading ? 'Updating Profile...' : 'Update Settings'}
                                         </button>
                                     </form>
                                 </div>

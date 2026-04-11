@@ -14,6 +14,12 @@ const costGoalSchema = new mongoose.Schema(
             required: true,
             enum: ['monthly', 'yearly'],
         },
+        utilityType: {
+            type: String,
+            required: true,
+            enum: ['electricity', 'gas', 'water', 'trash'],
+            default: 'electricity',
+        },
         year: {
             type: Number,
             required: true,
@@ -39,6 +45,6 @@ const costGoalSchema = new mongoose.Schema(
     }
 );
 
-costGoalSchema.index({ user: 1, type: 1, year: 1, month: 1 }, { unique: true });
+costGoalSchema.index({ user: 1, type: 1, year: 1, month: 1, utilityType: 1 }, { unique: true });
 
 module.exports = mongoose.model('CostGoal', costGoalSchema);

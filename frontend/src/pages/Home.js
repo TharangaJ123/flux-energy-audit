@@ -1,3 +1,4 @@
+// Marketing and summary landing page that links into the main FluxEnergy modules.
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,6 +20,7 @@ const Home = () => {
                 const records = await carbonService.getRecords();
                 if (records && records.length > 0) {
                     setLatestCarbon(records[0]);
+                    // A simple average is enough for the landing page summary; deeper analytics live in the tracker module.
                     const sum = records.reduce((acc, r) => acc + (Number(r.co2Emission) || 0), 0);
                     const avg = sum / records.length;
                     setMonthlyAvg(avg);
@@ -35,7 +37,7 @@ const Home = () => {
         fetchLatestCarbon();
     }, []);
 
-    // Mock Sri Lanka Grid Load Data (MW)
+    // Static sample data keeps the home page chart responsive even when no live grid integration is configured.
     const slGridData = [
         { time: '00:00', load: 1400 },
         { time: '03:00', load: 1350 },

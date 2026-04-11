@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Electricity cost data model.
+// Utility cost data model.
 
 const costSchema = new mongoose.Schema(
     {
@@ -20,7 +20,13 @@ const costSchema = new mongoose.Schema(
             required: true,
             min: 1900,
         },
-        electricityCost: {
+        utilityType: {
+            type: String,
+            required: true,
+            enum: ['electricity', 'gas', 'water', 'trash'],
+            default: 'electricity',
+        },
+        amount: {
             type: Number,
             required: true,
             min: 0,
@@ -53,6 +59,6 @@ const costSchema = new mongoose.Schema(
     }
 );
 
-costSchema.index({ user: 1, month: 1, year: 1 }, { unique: true });
+costSchema.index({ user: 1, month: 1, year: 1, utilityType: 1 }, { unique: true });
 
-module.exports = mongoose.model('ElectricityCost', costSchema);
+module.exports = mongoose.model('UtilityCost', costSchema);
