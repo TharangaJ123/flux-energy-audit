@@ -1,3 +1,4 @@
+// Appliance management workspace for CRUD operations, summaries, and energy audit actions.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { applianceApi } from '../services/api';
@@ -14,13 +15,17 @@ const ApplianceManagement = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [city, setCity] = useState('Colombo');
+  const [cityInput, setCityInput] = useState('Colombo');
 
   useEffect(() => {
     const detectLocation = async () => {
       try {
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
-        if (data.city) setCity(data.city);
+        if (data.city) {
+          setCity(data.city);
+          setCityInput(data.city);
+        }
       } catch (err) {
         console.error('Location detection failed:', err);
       }
@@ -37,14 +42,14 @@ const ApplianceManagement = () => {
 
   const categories = ['General', 'Kitchen', 'Cooling', 'Entertainment', 'Cleaning', 'Office', 'Other'];
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (targetCity = city) => {
     setLoading(true);
     setError('');
     try {
       const [applianceRes, statsRes, auditRes] = await Promise.all([
         applianceApi.getAppliances(),
         applianceApi.getApplianceStats(),
-        applianceApi.getEnergyAudit(city)
+        applianceApi.getEnergyAudit(targetCity)
       ]);
       setAppliances(applianceRes.data.data || []);
       setStats(statsRes.data.data || null);
@@ -208,12 +213,20 @@ const ApplianceManagement = () => {
                   <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm">
                     <input
                       type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      value={cityInput}
+                      onChange={(e) => setCityInput(e.target.value)}
                       placeholder="Switch City..."
                       className="px-6 py-3 bg-gray-50 border-0 rounded-xl font-bold text-gray-700 outline-none focus:ring-2 focus:ring-teal-100"
                     />
-                    <button onClick={fetchData} className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-md hover:bg-teal-700">Sync</button>
+                    <button 
+                      onClick={() => {
+                        setCity(cityInput);
+                        fetchData(cityInput);
+                      }} 
+                      className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-md hover:bg-teal-700"
+                    >
+                      Sync
+                    </button>
                   </div>
                 </div>
 
@@ -375,10 +388,10 @@ const ApplianceManagement = () => {
                           {app.category}
                         </span>
                         <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleEdit(app)} className="p-3 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-2xl transition-all shadow-sm">
+                          <button onClick={() => handleEdit(app)} aria-label="Edit appliance" className="p-3 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-2xl transition-all shadow-sm">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                           </button>
-                          <button onClick={() => handleDelete(app._id)} className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all shadow-sm">
+                          <button onClick={() => handleDelete(app._id)} aria-label="Delete appliance" className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all shadow-sm">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>

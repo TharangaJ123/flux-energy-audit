@@ -1,6 +1,7 @@
+// Solar estimator page for rough rooftop solar sizing, cost, and payback calculations.
 import React, { useState } from 'react';
-import axios from 'axios';
 import Layout from '../components/Layout';
+import { solarApi } from '../services/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -52,7 +53,7 @@ const SolarEstimator = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/solar/estimate', {
+      const response = await solarApi.estimate({
         rooftopArea: parseFloat(area),
         lat: location.lat,
         lon: location.lon

@@ -16,12 +16,15 @@ const callGemini = async (prompt, retries = 3) => {
         const response = await result.response;
         let text = response.text();
 
+        console.log("Raw Gemini Response:", text); // Debugging
+
         text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
         const start = text.indexOf('{');
         const end = text.lastIndexOf('}');
 
         if (start !== -1 && end !== -1) {
-            return JSON.parse(text.substring(start, end + 1));
+            const jsonPart = text.substring(start, end + 1);
+            return JSON.parse(jsonPart);
         }
         return JSON.parse(text);
     } catch (error) {
@@ -149,3 +152,77 @@ exports.generateChatResponse = async (history, message, context) => {
         return "I'm having trouble connecting to my AI core right now due to high demand. General tip: Switch off standby lights to save up to 5% on your bill!";
     }
 };
+
+/**
+ * Fetches/Estimates electricity tariff plan using AI based on provider and date.
+ * This replaces hard-coded rates with dynamic AI-generated data.
+ */
+exports.getAITariffPlan = async ({ provider, month, year }) => {
+    const prompt = `
+    You are an electricity tariff expert focusing on Sri Lankan utility providers (CEB and LECO).
+    Generate the official electricity tariff structure for the provider "${provider}" for the billing period ${month}/${year}.
+    
+    The response MUST be a valid JSON object only, with the following schema:
+    {
+      "slabs": [
+        { "from": number, "to": number | null, "ratePerUnit": number }
+      ],
+      "fixedCharge": number,
+      "peakRate": number,
+      "offPeakRate": number,
+      "taxRate": number,
+      "effectiveFrom": "YYYY-MM-DD"
+    }
+
+    Notes for the slabs:
+    - The "to" field should be null for the final slab (representing Infinity).
+    - Ensure rates and fixed charges reflect the most accurate data available for the given period.
+    - If you are unsure, provide the most widely accepted standard rates for that year.
+    
+    Do not include markdown or explanations. Return ONLY the raw JSON.
+  `;
+
+    try {
+        const data = await callGemini(prompt);
+        // Basic structure validation
+        if (!data.slabs || !Array.isArray(data.slabs) || typeof data.fixedCharge !== 'number') {
+            throw new Error('Invalid AI tariff structure');
+        }
+        return data;
+    } catch (error) {
+        console.error("Error fetching AI tariff plan:", error);
+        throw error;
+    }
+};
+
+/**
+ * Generates AI spending insights based on historical costs and goals
+ */
+exports.generateCostInsights = async ({ costs, goals }) => {
+    const prompt = `
+    You are a personal financial utility advisor.
+    Analyze the following utility spending data and budget goals for a household:
+    
+    Historical Costs (Last few entries):
+    ${JSON.stringify(costs.slice(0, 12))}
+    
+    Active Budget Goals:
+    ${JSON.stringify(goals)}
+
+    Please provide a response in valid JSON format ONLY with the following fields:
+    - summary: A conversational but professional summary of recent spending efficiency (max 3 sentences).
+    - recommendations: An array of 3-4 specific, data-driven recommendations (e.g., "Your water bill increased by 20% last month, check for leaks").
+    - status: One of ["excellent", "on-track", "warning", "critical"] based on goal compliance.
+    - highlight_category: The utility category that needs most attention (e.g., "Electricity").
+
+    Do not include markdown or explanations. Return ONLY the raw JSON.
+  `;
+
+    try {
+        return await callGemini(prompt);
+    } catch (error) {
+        console.error("Error generating cost insights:", error);
+        throw error;
+    }
+};
+

@@ -1,3 +1,4 @@
+// Swagger document assembly for interactive API documentation.
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const options = {

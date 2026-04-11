@@ -25,6 +25,10 @@ const getCurrentWeather = async (city = 'Colombo') => {
             insight: getEnergyInsight(response.data.main.temp)
         };
     } catch (error) {
+        if (error.response && error.response.status === 404) {
+            console.warn(`Weather data not found for city: ${city}`);
+            return { error: `City '${city}' not found` };
+        }
         console.error('Error fetching weather data:', error.message);
         return { error: 'Failed to fetch weather data' };
     }

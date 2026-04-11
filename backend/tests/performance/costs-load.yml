@@ -1,0 +1,27 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      rampTo: 15
+      name: warm-up-and-ramp
+  defaults:
+    headers:
+      Content-Type: application/json
+
+scenarios:
+  - name: estimate-cost-and-ai-insights
+    flow:
+      - post:
+          url: "/api/costs/estimate"
+          headers:
+            Authorization: "Bearer demo-token"
+          json:
+            units: 120
+            month: 4
+            year: 2026
+            provider: "CEB"
+      - get:
+          url: "/api/costs/ai-insights"
+          headers:
+            Authorization: "Bearer demo-token"

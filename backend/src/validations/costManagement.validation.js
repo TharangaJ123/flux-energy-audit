@@ -11,13 +11,16 @@ const isBeyondAllowedBillingWindow = ({ month, year }) => {
     return billingDate > maxAllowedDate;
 };
 
-// Validation schemas for electricity cost requests.
+// Validation schemas for utility cost requests.
+
+const UTILITY_TYPES = ['electricity', 'gas', 'water', 'trash'];
 
 // Validate payload for creating a cost record.
 const createCost = Joi.object({
     month: Joi.number().integer().min(1).max(12).required(),
     year: Joi.number().integer().min(1900).max(MAX_ALLOWED_YEAR).required(),
-    electricityCost: Joi.number().min(0).max(MAX_ALLOWED_COST).required(),
+    utilityType: Joi.string().valid(...UTILITY_TYPES).default('electricity'),
+    amount: Joi.number().min(0).max(MAX_ALLOWED_COST).required(),
     notes: Joi.string().allow('').optional(),
 }).custom((value, helpers) => {
     if (isBeyondAllowedBillingWindow({ month: value.month, year: value.year })) {
@@ -31,7 +34,8 @@ const createCost = Joi.object({
 const updateCost = Joi.object({
     month: Joi.number().integer().min(1).max(12),
     year: Joi.number().integer().min(1900).max(MAX_ALLOWED_YEAR),
-    electricityCost: Joi.number().min(0).max(MAX_ALLOWED_COST),
+    utilityType: Joi.string().valid(...UTILITY_TYPES),
+    amount: Joi.number().min(0).max(MAX_ALLOWED_COST),
     notes: Joi.string().allow('').optional(),
 }).custom((value, helpers) => {
     if (value.month !== undefined && value.year !== undefined) {

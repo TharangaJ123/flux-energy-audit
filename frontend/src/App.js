@@ -1,3 +1,4 @@
+// Top-level client router that maps product sections to their page components.
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CostManagement from './pages/CostManagement';
@@ -7,6 +8,7 @@ import EnergyAuditManagement from './pages/EnergyAuditManagement';
 
 import CarbonTracker from './pages/CarbonTracker';
 import SolarEstimator from './pages/SolarEstimator';
+import Documentation from './pages/Documentation';
 
 function App() {
   return (
@@ -21,6 +23,7 @@ function App() {
         <Route path="/solar-estimator" element={<SolarEstimator />} />
         <Route path="/login" element={<UserManagement />} />
         <Route path="/register" element={<UserManagement />} />
+        <Route path="/documentation" element={<Documentation />} />
       </Routes>
     </Router>
   );

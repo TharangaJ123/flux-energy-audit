@@ -1,0 +1,51 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 30
+      arrivalRate: 2
+      rampTo: 10
+      name: "Warm up and ramp"
+    - duration: 30
+      arrivalRate: 10
+      name: "Sustained load"
+  defaults:
+    headers:
+      Content-Type: application/json
+
+scenarios:
+  - name: "Carbon Footprint Tracker Performance Test"
+    flow:
+      - post:
+          url: "/api/carbon"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+          json:
+            month: "May"
+            year: 2024
+            electricity: 120
+            gasSelections: ["natural"]
+            gasAmounts: { natural: 15 }
+            transportSelections: ["petrolCar"]
+            transportDistances: { petrolCar: 60 }
+            waste: 12
+          capture:
+            - json: "$._id"
+              as: "recordId"
+      - get:
+          url: "/api/carbon"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+      - get:
+          url: "/api/carbon/{{ recordId }}"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+      - put:
+          url: "/api/carbon/{{ recordId }}"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
+          json:
+            electricity: 140
+      - delete:
+          url: "/api/carbon/{{ recordId }}"
+          headers:
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"

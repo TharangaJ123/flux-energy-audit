@@ -1,3 +1,4 @@
+// MongoDB connection bootstrap used by the production server entrypoint.
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
