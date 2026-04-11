@@ -54,7 +54,7 @@ const ChatGraphState = Annotation.Root({
 // --- Initialize LLM ---
 const createModel = () => {
     return new ChatGoogleGenerativeAI({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         apiKey: process.env.GEMINI_AUDIT_API_KEY || process.env.GEMINI_API_KEY,
         temperature: 0.7,
         maxRetries: 2,
