@@ -7,10 +7,10 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Initialize two separate AI instances for different features
-const auditAI = new GoogleGenerativeAI(process.env.GEMINI_AUDIT_API_KEY);
-const costAI = new GoogleGenerativeAI(process.env.GEMINI_COST_API_KEY);
+const auditAI = new GoogleGenerativeAI(process.env.GEMINI_AUDIT_API_KEY || process.env.GEMINI_API_KEY);
+const costAI = new GoogleGenerativeAI(process.env.GEMINI_COST_API_KEY || process.env.GEMINI_API_KEY);
 
-const auditModel = auditAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const auditModel = auditAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const costModel = costAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Helper function to call Gemini with a retry mechanism if the service is busy
