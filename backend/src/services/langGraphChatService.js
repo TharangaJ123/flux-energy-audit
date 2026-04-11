@@ -247,8 +247,8 @@ exports.chat = async (context, message, history = []) => {
         console.log('Graph Workflow completed successfully');
         return result.aiResponse;
     } catch (error) {
-        console.error('LANGGRAPH FATAL ERROR:', error);
+        console.error('LANGGRAPH FATAL ERROR:', error.message);
         // Fallback to a simpler message so the user isn't stuck with 500
-        throw new Error(`AI Chat system error: ${error.message}`);
+        return "I'm having a temporary system issue connecting to my core AI. General tip: Switch off standby lights to save up to 5% on your bill!";
     }
 };
