@@ -233,13 +233,22 @@ const getGraph = () => {
  * @returns {string} The AI response
  */
 exports.chat = async (context, message, history = []) => {
-    const graph = getGraph();
+    try {
+        console.log('Starting LangGraph Chat Workflow...');
+        const graph = getGraph();
 
-    const result = await graph.invoke({
-        userMessage: message,
-        auditContext: context,
-        chatHistory: history,
-    });
+        console.log('Invoking Graph with message:', message);
+        const result = await graph.invoke({
+            userMessage: message,
+            auditContext: context,
+            chatHistory: history,
+        });
 
-    return result.aiResponse;
+        console.log('Graph Workflow completed successfully');
+        return result.aiResponse;
+    } catch (error) {
+        console.error('LANGGRAPH FATAL ERROR:', error);
+        // Fallback to a simpler message so the user isn't stuck with 500
+        throw new Error(`AI Chat system error: ${error.message}`);
+    }
 };
