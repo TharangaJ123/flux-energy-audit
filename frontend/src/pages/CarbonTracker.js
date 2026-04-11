@@ -27,6 +27,7 @@ const CarbonTracker = () => {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState('records');
+  const [editingRecord, setEditingRecord] = useState(null);
 
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -79,16 +80,89 @@ const CarbonTracker = () => {
   };
 
   const handleSubmit = async () => {
+    if (editingRecord) {
+      await handleUpdate();
+    } else {
+      setError('');
+      try {
+        // Basic validation
+        if (!form.electricity && form.electricity !== 0) {
+          setError('Please enter electricity consumption.');
+          return;
+        }
+
+        // Prepare payload to ensure numbers are safely parsed
+        // Destructure 'date' out to avoid sending UI-only fields to backend
+        const { date, ...formData } = form;
+        const payload = {
+          ...formData,
+          electricity: parseFloat(form.electricity) || 0,
+          waste: parseFloat(form.waste) || 0,
+          month: String(form.month),
+          year: parseInt(form.year, 10),
+          gasAmounts: Object.fromEntries(
+            Object.entries(form.gasAmounts).map(([k, v]) => [k, parseFloat(v) || 0])
+          ),
+          transportDistances: Object.fromEntries(
+            Object.entries(form.transportDistances).map(([k, v]) => [k, parseFloat(v) || 0])
+          )
+        };
+
+        await carbonService.createRecord(payload);
+        setForm({
+          date: new Date().toISOString().split('T')[0],
+          month: String(new Date().getMonth() + 1),
+          year: new Date().getFullYear(),
+          electricity: '',
+          gasSelections: [],
+          gasAmounts: {},
+          transportSelections: [],
+          transportDistances: {},
+          waste: ''
+        });
+        setShowForm(false);
+        await fetchRecords();
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to save record');
+      }
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this footprint record?')) {
+      try {
+        await carbonService.deleteRecord(id);
+        await fetchRecords();
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to delete record');
+      }
+    }
+  };
+
+  const handleEdit = (record) => {
+    setEditingRecord(record);
+    setForm({
+      date: new Date(record.year, record.month - 1).toISOString().split('T')[0],
+      month: String(record.month),
+      year: record.year,
+      electricity: String(record.electricity || ''),
+      gasSelections: record.gasData?.selections || [],
+      gasAmounts: record.gasData?.amounts || {},
+      transportSelections: record.transportData?.selections || [],
+      transportDistances: record.transportData?.distances || {},
+      waste: String(record.waste || '')
+    });
+    setShowForm(true);
+  };
+
+  const handleUpdate = async () => {
     setError('');
     try {
-      // Basic validation
       if (!form.electricity && form.electricity !== 0) {
         setError('Please enter electricity consumption.');
         return;
       }
 
-      // Prepare payload to ensure numbers are safely parsed
-      // Destructure 'date' out to avoid sending UI-only fields to backend
       const { date, ...formData } = form;
       const payload = {
         ...formData,
@@ -104,7 +178,8 @@ const CarbonTracker = () => {
         )
       };
 
-      await carbonService.createRecord(payload);
+      await carbonService.updateRecord(editingRecord._id, payload);
+      setEditingRecord(null);
       setForm({
         date: new Date().toISOString().split('T')[0],
         month: String(new Date().getMonth() + 1),
@@ -119,19 +194,24 @@ const CarbonTracker = () => {
       setShowForm(false);
       await fetchRecords();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save record');
+      setError(err.response?.data?.message || 'Failed to update record');
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this footprint record?')) {
-      try {
-        await carbonService.deleteRecord(id);
-        await fetchRecords();
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete record');
-      }
-    }
+  const handleCancelEdit = () => {
+    setEditingRecord(null);
+    setForm({
+      date: new Date().toISOString().split('T')[0],
+      month: String(new Date().getMonth() + 1),
+      year: new Date().getFullYear(),
+      electricity: '',
+      gasSelections: [],
+      gasAmounts: {},
+      transportSelections: [],
+      transportDistances: {},
+      waste: ''
+    });
+    setShowForm(false);
   };
 
   const getDynamicTips = (record) => {
@@ -237,8 +317,10 @@ const CarbonTracker = () => {
       if (d.airplane) transCO2 += (parseFloat(d.airplane) || 0) * EMISSION_FACTORS.airplane;
     }
 
+    // Calculate CO2 emissions from waste
     const wasteCO2 = (parseFloat(r.waste) || 0) * EMISSION_FACTORS.waste;
 
+    // Accumulate CO2 values for each category
     acc[key].co2 += parseFloat((r.co2Emission || 0).toFixed(1));
     acc[key].Electricity += parseFloat(elecCO2.toFixed(1));
     acc[key].Gas += parseFloat(gasCO2.toFixed(1));
@@ -256,14 +338,19 @@ const CarbonTracker = () => {
     Waste: parseFloat(rest.Waste.toFixed(1))
   }));
 
-  // Individual record data for the detailed breakdown
+  // Create individual record data for detailed breakdown chart
   const individualChartData = records.map((r, index) => {
+    // Calculate electricity CO2 emissions for this record
     const elecCO2 = (parseFloat(r.electricity) || 0) * EMISSION_FACTORS.electricity;
+    
+    // Calculate gas CO2 emissions from natural gas and LPG
     let gasCO2 = 0;
     if (r.gasData && r.gasData.amounts) {
       if (r.gasData.amounts.natural) gasCO2 += (parseFloat(r.gasData.amounts.natural) || 0) * EMISSION_FACTORS.naturalGas;
       if (r.gasData.amounts.lpg) gasCO2 += (parseFloat(r.gasData.amounts.lpg) || 0) * EMISSION_FACTORS.lpg;
     }
+    
+    // Calculate transport CO2 emissions from different vehicle types
     let transCO2 = 0;
     if (r.transportData && r.transportData.distances) {
       const d = r.transportData.distances;
@@ -364,17 +451,23 @@ const CarbonTracker = () => {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Historical Carbon Footprints</h2>
               <button
-                onClick={() => setShowForm(!showForm)}
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center gap-2"
+                onClick={() => {
+                  if (editingRecord) {
+                    handleCancelEdit();
+                  } else {
+                    setShowForm(!showForm);
+                  }
+                }}
+                className={`${editingRecord ? 'px-10 py-4 text-gray-400 font-bold border border-gray-100 rounded-full hover:text-gray-900 transition-colors uppercase text-xs tracking-widest' : 'btn-primary flex items-center gap-2'}`}
               >
-                {showForm ? '✕ Cancel' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Calculate Footprint</>}
+                {editingRecord ? '✕ Cancel Edit' : (showForm ? '✕ Cancel' : <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> Calculate Footprint</>)}
               </button>
             </div>
 
             {showForm && (
               <div className="bg-white/70 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl border border-white/50 animate-in slide-in-from-top-4 duration-300 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-                <h3 className="text-2xl font-extrabold mb-8 text-gray-800 relative z-10">New Footprint Record</h3>
+                <h3 className="text-2xl font-extrabold mb-8 text-gray-800 relative z-10">{editingRecord ? 'Edit Footprint Record' : 'New Footprint Record'}</h3>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative z-10">
                   {/* Left Column */}
@@ -496,10 +589,18 @@ const CarbonTracker = () => {
                 <div className="mt-10 flex gap-4 relative z-10 pt-6 border-t border-blue-100/50">
                   <button
                     onClick={handleSubmit}
-                    className="bg-blue-600 text-white px-10 py-4 rounded-xl font-extrabold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200/50 active:scale-95 text-lg w-full md:w-auto"
+                    className="btn-primary text-lg w-full md:w-auto"
                   >
-                    Analyze & Save
+                    {editingRecord ? 'Update Record' : 'Analyze & Save'}
                   </button>
+                  {editingRecord && (
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-10 py-4 text-gray-400 font-bold border border-gray-100 rounded-full hover:text-gray-900 transition-colors uppercase text-xs tracking-widest text-lg w-full md:w-auto"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -524,9 +625,14 @@ const CarbonTracker = () => {
                       <div className="px-4 py-1.5 bg-gray-900 text-white text-xs font-black rounded-xl uppercase tracking-wider shadow-sm">
                         {new Date(2024, record.month - 1).toLocaleString('default', { month: 'short' })} {record.year}
                       </div>
-                      <button onClick={() => handleDelete(record._id)} className="p-2 hover:bg-red-50 text-red-400 hover:text-red-600 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleEdit(record)} className="p-2 hover:bg-blue-50 text-blue-400 hover:text-blue-600 rounded-lg transition-colors">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onClick={() => handleDelete(record._id)} className="p-2 hover:bg-red-50 text-red-400 hover:text-red-600 rounded-lg transition-colors">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="relative z-10 mb-6">
@@ -574,7 +680,7 @@ const CarbonTracker = () => {
             ) : (
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
-                  <div className="bg-blue-600 p-6 rounded-[2rem] text-white shadow-xl shadow-blue-100">
+                  <div className="bg-teal-500 p-6 rounded-[2rem] text-white shadow-xl shadow-blue-100">
                     <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Total Impact</p>
                     <h4 className="text-3xl font-black">
                       {records.reduce((acc, r) => acc + (r.co2Emission || 0), 0).toFixed(1)}
