@@ -89,4 +89,9 @@ export const energyAuditApi = {
   chatWithAudit: (id, chatData) => api.post(`/energy-audits/${id}/chat`, chatData),
 };
 
+// Solar Estimator APIs
+export const solarApi = {
+  estimate: (data) => api.post('/solar/estimate', data),
+};
+
 export default api;

@@ -1,9 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SolarEstimator from '../pages/SolarEstimator';
-import axios from 'axios';
+import { solarApi } from '../services/api';
 
-jest.mock('axios');
+jest.mock('../services/api', () => ({
+    solarApi: {
+        estimate: jest.fn()
+    }
+}));
 
 // Mock Recharts to avoid ResizeObserver and responsive container issues in jsdom
 jest.mock('recharts', () => {
@@ -65,7 +69,7 @@ describe('SolarEstimator', () => {
                 }
             }
         };
-        axios.post.mockResolvedValueOnce(mockData);
+        solarApi.estimate.mockResolvedValueOnce(mockData);
 
         render(
             <MemoryRouter>
@@ -82,7 +86,7 @@ describe('SolarEstimator', () => {
         expect(button).toHaveTextContent(/Calculating.../i);
 
         await waitFor(() => {
-            expect(axios.post).toHaveBeenCalledWith('http://localhost:5000/api/solar/estimate', {
+            expect(solarApi.estimate).toHaveBeenCalledWith({
                 rooftopArea: 500,
                 lat: null,
                 lon: null
