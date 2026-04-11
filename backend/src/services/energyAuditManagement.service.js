@@ -1,6 +1,7 @@
 const EnergyAudit = require('../models/energyAuditManagement.model');
 const Appliance = require('../models/appliancemanagement.model');
 const geminiService = require('./geminiService');
+const langGraphChat = require('./langGraphChatService');
 const { runInTransaction } = require('../util/transaction');
 
 // Creates a new audit and performs AI analysis based on the consumed units and appliances
@@ -156,7 +157,7 @@ exports.simulateChange = async (auditId, userId, changes) => {
     return simulationResult;
 };
 
-// Allows interactive Q&A about a specific audit using the audit's results as context
+// Allows interactive Q&A about a specific audit using LangGraph's multi-node AI workflow
 exports.chatWithAudit = async (auditId, userId, message, history) => {
     const audit = await EnergyAudit.findOne({ _id: auditId, user: userId });
     if (!audit) throw new Error('Audit not found');
@@ -180,6 +181,7 @@ exports.chatWithAudit = async (auditId, userId, message, history) => {
         recommendations: audit.aiRecommendations
     };
 
-    const response = await geminiService.generateChatResponse(history, message, context);
+    // Use LangGraph stateful graph instead of direct Gemini call
+    const response = await langGraphChat.chat(context, message, history);
     return response;
 };
