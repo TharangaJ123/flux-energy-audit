@@ -6,13 +6,18 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+// Initialize two separate AI instances for different features
+const auditAI = new GoogleGenerativeAI(process.env.GEMINI_AUDIT_API_KEY);
+const costAI = new GoogleGenerativeAI(process.env.GEMINI_COST_API_KEY);
+
+const auditModel = auditAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const costModel = costAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Helper function to call Gemini with a retry mechanism if the service is busy
-const callGemini = async (prompt, retries = 3) => {
+const callGemini = async (prompt, modelType = 'audit', retries = 3) => {
+    const activeModel = modelType === 'cost' ? costModel : auditModel;
     try {
-        const result = await model.generateContent(prompt);
+        const result = await activeModel.generateContent(prompt);
         const response = await result.response;
         let text = response.text();
 
@@ -33,7 +38,7 @@ const callGemini = async (prompt, retries = 3) => {
             const waitTime = error.status === 429 ? 5000 : 2000; // 429 නම් තත්පර 5ක් ඉන්න
             console.log(`AI limited or busy (Status: ${error.status}), retrying in ${waitTime / 1000}s... (${retries} left)`);
             await new Promise(res => setTimeout(res, waitTime));
-            return callGemini(prompt, retries - 1);
+            return callGemini(prompt, modelType, retries - 1);
         }
         throw error;
     }
@@ -112,7 +117,7 @@ exports.generateSimulation = async (baseData, changes) => {
     `;
 
     try {
-        return await callGemini(prompt);
+        return await callGemini(prompt, 'audit');
     } catch (error) {
         console.error("Error generating simulation:", error);
         return {
@@ -138,7 +143,7 @@ exports.generateChatResponse = async (history, message, context) => {
   `;
 
     try {
-        const chat = model.startChat({
+        const chat = auditModel.startChat({
             history: history.map(msg => ({
                 role: msg.role === 'user' ? 'user' : 'model',
                 parts: [{ text: msg.content }],
@@ -183,7 +188,7 @@ exports.getAITariffPlan = async ({ provider, month, year }) => {
   `;
 
     try {
-        const data = await callGemini(prompt);
+        const data = await callGemini(prompt, 'cost');
         // Basic structure validation
         if (!data.slabs || !Array.isArray(data.slabs) || typeof data.fixedCharge !== 'number') {
             throw new Error('Invalid AI tariff structure');
@@ -219,7 +224,7 @@ exports.generateCostInsights = async ({ costs, goals }) => {
   `;
 
     try {
-        return await callGemini(prompt);
+        return await callGemini(prompt, 'cost');
     } catch (error) {
         console.error("Error generating cost insights:", error);
         throw error;
