@@ -5,7 +5,7 @@ import { costApi } from '../services/api';
 import Layout from '../components/Layout';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -563,7 +563,7 @@ const CostManagement = () => {
     // Group costs by month/year
     const monthlyGroups = {};
     const last6Months = [];
-    
+
     // Generate labels for last 6 months
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
@@ -875,14 +875,14 @@ const CostManagement = () => {
                 {/* Decorative background elements */}
                 <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
                 <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl"></div>
-                
+
                 <div className="relative flex flex-col lg:flex-row items-center gap-8">
                   <div className="w-20 h-20 lg:w-24 lg:h-24 bg-white/20 backdrop-blur-xl rounded-3xl flex items-center justify-center shadow-inner border border-white/30 shrink-0">
                     <svg className={`w-12 h-12 text-white ${insightsLoading ? 'animate-spin' : 'animate-pulse'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
-                  
+
                   <div className="flex-1 text-center lg:text-left">
                     <div className="mb-4">
                       <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-3">
@@ -902,7 +902,7 @@ const CostManagement = () => {
                         <p className="text-blue-50 text-lg font-medium leading-relaxed max-w-2xl">
                           {aiInsights.summary}
                         </p>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {aiInsights.recommendations?.map((rec, i) => (
                             <div key={i} className="flex items-start gap-3 bg-black/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 group-hover:border-white/20 transition-all">
@@ -913,23 +913,22 @@ const CostManagement = () => {
                             </div>
                           ))}
                         </div>
-                        
+
                         <div className="flex flex-wrap items-center gap-4 pt-2">
-                           <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${
-                             aiInsights.status === 'excellent' ? 'bg-emerald-500 text-white' :
-                             aiInsights.status === 'warning' ? 'bg-amber-500 text-white' :
-                             aiInsights.status === 'critical' ? 'bg-rose-500 text-white' :
-                             'bg-blue-800 text-blue-100'
-                           }`}>
-                             Status: {aiInsights.status}
-                           </div>
-                           <button 
-                             onClick={fetchAIInsights}
-                             className="text-white/80 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-wider transition-colors"
-                           >
-                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                             Refine Analysis
-                           </button>
+                          <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${aiInsights.status === 'excellent' ? 'bg-emerald-500 text-white' :
+                              aiInsights.status === 'warning' ? 'bg-amber-500 text-white' :
+                                aiInsights.status === 'critical' ? 'bg-rose-500 text-white' :
+                                  'bg-blue-800 text-blue-100'
+                            }`}>
+                            Status: {aiInsights.status}
+                          </div>
+                          <button
+                            onClick={fetchAIInsights}
+                            className="text-white/80 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-wider transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            Refine Analysis
+                          </button>
                         </div>
                       </div>
                     ) : (
@@ -939,7 +938,7 @@ const CostManagement = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {aiInsights && (
                     <div className="hidden xl:flex flex-col items-center justify-center bg-white/10 backdrop-blur-2xl p-6 rounded-[2rem] border border-white/20 min-w-[180px]">
                       <p className="text-[10px] font-black text-white/60 uppercase mb-2">Priority Focus</p>
@@ -1021,7 +1020,7 @@ const CostManagement = () => {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/30 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500"></div>
                   <h3 className="text-xl font-bold text-gray-800 mb-2">Spending Distribution</h3>
                   <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-6">Current Portfolio Breakdown</p>
-                  
+
                   <div className="h-[300px] w-full relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
@@ -1038,7 +1037,7 @@ const CostManagement = () => {
                             <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                           ))}
                         </Pie>
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                           formatter={(value) => [`Rs. ${formatMoney(value)}`, 'Spent']}
                         />
@@ -1051,7 +1050,7 @@ const CostManagement = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-wrap justify-center gap-4 mt-4">
                     {pieData.map(item => (
                       <div key={item.name} className="flex items-center gap-2">
@@ -1066,28 +1065,28 @@ const CostManagement = () => {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50/30 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500"></div>
                   <h3 className="text-xl font-bold text-gray-800 mb-2">Spending Trends</h3>
                   <p className="text-gray-400 text-xs font-semibold uppercase tracking-widest mb-6">Last 6 Months Category Analysis</p>
-                  
+
                   <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={barData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis 
-                          dataKey="name" 
-                          stroke="#94a3b8" 
-                          fontSize={10} 
-                          tickLine={false} 
+                        <XAxis
+                          dataKey="name"
+                          stroke="#94a3b8"
+                          fontSize={10}
+                          tickLine={false}
                           axisLine={false}
                           tick={{ fontWeight: 700 }}
                         />
-                        <YAxis 
-                          stroke="#94a3b8" 
-                          fontSize={10} 
-                          tickLine={false} 
+                        <YAxis
+                          stroke="#94a3b8"
+                          fontSize={10}
+                          tickLine={false}
                           axisLine={false}
                           tick={{ fontWeight: 700 }}
-                          tickFormatter={(val) => `Rs.${val > 1000 ? (val/1000) + 'k' : val}`}
+                          tickFormatter={(val) => `Rs.${val > 1000 ? (val / 1000) + 'k' : val}`}
                         />
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                           cursor={{ fill: '#f8fafc', radius: 10 }}
                         />
@@ -1286,68 +1285,69 @@ const CostManagement = () => {
                   const isPeakMonth = peakCostIds.has(cost._id);
 
                   return (
-                  <div key={cost._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="grid gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-lg uppercase">
-                            {new Date(2024, cost.month - 1).toLocaleString('default', { month: 'short' })} {cost.year}
+                    <div key={cost._id} className="group bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="grid gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-lg uppercase">
+                              {new Date(2024, cost.month - 1).toLocaleString('default', { month: 'short' })} {cost.year}
+                            </div>
+                            {isPeakMonth && (
+                              <span className="px-2 py-1 text-[10px] font-black rounded-md bg-rose-100 text-rose-700 uppercase">Peak Log</span>
+                            )}
                           </div>
-                          {isPeakMonth && (
-                            <span className="px-2 py-1 text-[10px] font-black rounded-md bg-rose-100 text-rose-700 uppercase">Peak Log</span>
-                          )}
+                          <div className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-black rounded-lg uppercase w-fit">
+                            {cost.utilityType || 'electricity'}
+                          </div>
                         </div>
-                        <div className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-black rounded-lg uppercase w-fit">
-                          {cost.utilityType || 'electricity'}
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setCostForm({ ...cost, document: null }); setCostEditingId(cost._id); setCostFieldErrors({}); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                          <button onClick={() => handleDeleteCost(cost._id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                         </div>
                       </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setCostForm({ ...cost, document: null }); setCostEditingId(cost._id); setCostFieldErrors({}); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                        <button onClick={() => handleDeleteCost(cost._id)} className="p-2 hover:bg-red-50 text-red-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                      </div>
-                    </div>
-                    <p className="text-4xl font-black text-gray-900 mb-2">
-                      <span className="text-lg font-bold text-gray-400 mr-1">Rs.</span>
-                      {formatMoney(cost.amount || cost.electricityCost)}
-                    </p>
-                    {monthlyGoalExceedsCost && (
-                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
-                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
-                        </svg>
-                        <span>
-                          Warning: {applicableGoal.source === 'yearly' ? 'Yearly fallback goal' : 'Monthly goal'} exceeds this bill amount.
-                        </span>
+                      <p className="text-4xl font-black text-gray-900 mb-2">
+                        <span className="text-lg font-bold text-gray-400 mr-1">Rs.</span>
+                        {formatMoney(cost.amount || cost.electricityCost)}
+                      </p>
+                      {monthlyGoalExceedsCost && (
+                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
+                          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+                          </svg>
+                          <span>
+                            Warning: {applicableGoal.source === 'yearly' ? 'Yearly fallback goal' : 'Monthly goal'} exceeds this bill amount.
+                          </span>
+                          <button
+                            onClick={() => startAdjustGoalForCost(cost)}
+                            className="ml-auto px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs"
+                          >
+                            Adjust Goal
+                          </button>
+                        </div>
+                      )}
+                      {applicableGoal.source === 'yearly' && (
+                        <p className="text-xs text-emerald-600 font-semibold mt-2">Using yearly goal as fallback (monthly goal has priority when available).</p>
+                      )}
+                      {cost.document?.path && (
                         <button
-                          onClick={() => startAdjustGoalForCost(cost)}
-                          className="ml-auto px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs"
+                          onClick={() => handleDownloadDocument(cost._id, cost.document.originalName || `bill-${cost.month}-${cost.year}`)}
+                          aria-label="Download bill document"
+                          title="Download bill document"
+                          className="mt-3 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 shadow-sm transition-all hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100"
                         >
-                          Adjust Goal
+                          <svg
+                            className={`w-5 h-5 ${downloadingDocumentId === cost._id ? 'animate-pulse' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M8 4h5l5 5v9a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" />
+                          </svg>
                         </button>
-                      </div>
-                    )}
-                    {applicableGoal.source === 'yearly' && (
-                      <p className="text-xs text-emerald-600 font-semibold mt-2">Using yearly goal as fallback (monthly goal has priority when available).</p>
-                    )}
-                    {cost.document?.path && (
-                      <button
-                        onClick={() => handleDownloadDocument(cost._id, cost.document.originalName || `bill-${cost.month}-${cost.year}`)}
-                        aria-label="Download bill document"
-                        title="Download bill document"
-                        className="mt-3 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 shadow-sm transition-all hover:border-blue-300 hover:from-blue-100 hover:to-cyan-100"
-                      >
-                        <svg
-                          className={`w-5 h-5 ${downloadingDocumentId === cost._id ? 'animate-pulse' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M8 4h5l5 5v9a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                )})}
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -1466,66 +1466,67 @@ const CostManagement = () => {
                   goal.type === 'monthly' && hasBillData && goalAmount > billAmount;
 
                 return (
-                <div key={goal._id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <p className="text-emerald-600 font-black uppercase tracking-widest text-xs mb-1">
-                        {goal.utilityType || 'electricity'} • {goal.type}
-                      </p>
-                      <h3 className="text-3xl font-black text-gray-900">
-                        {goal.type === 'monthly' ? `${new Date(2024, goal.month - 1).toLocaleString('default', { month: 'long' })}` : goal.year}
-                      </h3>
+                  <div key={goal._id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <p className="text-emerald-600 font-black uppercase tracking-widest text-xs mb-1">
+                          {goal.utilityType || 'electricity'} • {goal.type}
+                        </p>
+                        <h3 className="text-3xl font-black text-gray-900">
+                          {goal.type === 'monthly' ? `${new Date(2024, goal.month - 1).toLocaleString('default', { month: 'long' })}` : goal.year}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => startGoalEdit(goal)} className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                        <button onClick={() => handleDeleteGoal(goal._id)} className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => startGoalEdit(goal)} className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                      <button onClick={() => handleDeleteGoal(goal._id)} className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <div className="space-y-2">
+                      <p className="text-gray-400 font-bold text-sm uppercase">Budget Limit</p>
+                      <p className="text-5xl font-black text-gray-900 italic">Rs. {formatMoney(goal.goalAmount)}</p>
+                      {hasBillData && (
+                        <p className="text-sm font-semibold text-gray-600 pt-1">
+                          Related Bill Amount: Rs. {formatMoney(billAmount)}
+                        </p>
+                      )}
+                      {monthlyGoalExceedsBill && (
+                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
+                          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+                          </svg>
+                          Warning: Monthly goal exceeds the bill amount.
+                          <button
+                            onClick={() => startGoalEdit(goal)}
+                            className="ml-auto px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs"
+                          >
+                            Adjust Goal
+                          </button>
+                        </div>
+                      )}
+                      {goal.type === 'yearly' && (
+                        <p className="text-xs text-emerald-600 font-semibold pt-1">Priority rule: monthly goals override this yearly goal for matching months.</p>
+                      )}
+                      {goalAmount > 0 && hasBillData && (
+                        <div className="pt-2">
+                          <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
+                            <span>Goal Progress</span>
+                            <span>{Math.min((billAmount / goalAmount) * 100, 999).toFixed(1)}%</span>
+                          </div>
+                          <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                            <div
+                              className={`h-full ${billAmount > goalAmount ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                              style={{ width: `${Math.min((billAmount / goalAmount) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">Actual: Rs. {formatMoney(billAmount)} / Target: Rs. {formatMoney(goalAmount)}</p>
+                        </div>
+                      )}
+                      {goal.notes && <p className="text-gray-500 text-sm pt-2">{goal.notes}</p>}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-gray-400 font-bold text-sm uppercase">Budget Limit</p>
-                    <p className="text-5xl font-black text-gray-900 italic">Rs. {formatMoney(goal.goalAmount)}</p>
-                    {hasBillData && (
-                      <p className="text-sm font-semibold text-gray-600 pt-1">
-                        Related Bill Amount: Rs. {formatMoney(billAmount)}
-                      </p>
-                    )}
-                    {monthlyGoalExceedsBill && (
-                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-sm font-semibold flex items-center gap-2">
-                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 3c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
-                        </svg>
-                        Warning: Monthly goal exceeds the bill amount.
-                        <button
-                          onClick={() => startGoalEdit(goal)}
-                          className="ml-auto px-3 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-black text-xs"
-                        >
-                          Adjust Goal
-                        </button>
-                      </div>
-                    )}
-                    {goal.type === 'yearly' && (
-                      <p className="text-xs text-emerald-600 font-semibold pt-1">Priority rule: monthly goals override this yearly goal for matching months.</p>
-                    )}
-                    {goalAmount > 0 && hasBillData && (
-                      <div className="pt-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-1">
-                          <span>Goal Progress</span>
-                          <span>{Math.min((billAmount / goalAmount) * 100, 999).toFixed(1)}%</span>
-                        </div>
-                        <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
-                          <div
-                            className={`h-full ${billAmount > goalAmount ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                            style={{ width: `${Math.min((billAmount / goalAmount) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">Actual: Rs. {formatMoney(billAmount)} / Target: Rs. {formatMoney(goalAmount)}</p>
-                      </div>
-                    )}
-                    {goal.notes && <p className="text-gray-500 text-sm pt-2">{goal.notes}</p>}
-                  </div>
-                </div>
-              )})}
+                )
+              })}
             </div>
           </div>
         )}
