@@ -245,11 +245,11 @@ const downloadDocument = async (req, res) => {
 // Get AI-driven spending insights.
 const getAIInsights = async (req, res) => {
     try {
-        const insights = await costService.getAIInsights(req.user._id);
-        res.status(200).json(insights);
+        //const insights = await costService.getAIInsights(req.user._id);
+       // res.status(200).json(insights);
     } catch (error) {
         //console.error('AI Insights Error:', error.message);
-        res.status(500).json({ message: 'Error generating AI insights' });
+       // res.status(500).json({ message: 'Error generating AI insights' });
     }
 };
 
