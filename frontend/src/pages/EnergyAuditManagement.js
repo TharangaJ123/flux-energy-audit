@@ -1,3 +1,8 @@
+/**
+ * EnergyAuditManagement Component
+ * Advanced dashboard for managing household energy audits. Features a 
+ * voice-guided "Guided Mode" assistant and AI-powered chat for consumption insights.
+ */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { energyAuditApi, applianceApi } from '../services/api';
@@ -37,6 +42,7 @@ const EnergyAuditManagement = () => {
 
     const recognitionRef = useRef(null);
 
+    // text-to-speech engine to provide audio feedback during guided audits
     const speak = (text) => {
         if (!window.speechSynthesis) return;
 
@@ -64,6 +70,7 @@ const EnergyAuditManagement = () => {
         window.speechSynthesis.speak(utterance);
     };
 
+    // voice recognition engine to capture user input hands-free
     const listen = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) return;
@@ -414,6 +421,7 @@ const EnergyAuditManagement = () => {
         setShowForm(true);
     };
 
+    // Integration with AI chat service for natural language audit analysis
     const handleChat = async (e) => {
         e.preventDefault();
         if (!userInput.trim() || !activeAudit) return;

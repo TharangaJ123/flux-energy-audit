@@ -1,5 +1,6 @@
 /**
- * User Routes - Defines API endpoints for user management
+ * @file userManagement.route.js
+ * @description API endpoints for user authentication and profile management.
  */
 const express = require('express');
 const router = express.Router();

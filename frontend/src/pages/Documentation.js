@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 
+/**
+ * Documentation Page
+ * Provides a comprehensive guide to the FluxEnergy platform, including overview,
+ * core modules, security details, and API specifications.
+ */
 const Documentation = () => {
     const [activeSection, setActiveSection] = useState('overview');
 
+    // Handle scroll to update active section in navigation
     useEffect(() => {
         const handleScroll = () => {
             const sections = ['overview', 'core-modules', 'security', 'api-specs'];
@@ -11,6 +17,7 @@ const Documentation = () => {
                 const element = document.getElementById(section);
                 if (element) {
                     const rect = element.getBoundingClientRect();
+                    // Section is considered active if it's near the top of the viewport
                     return rect.top >= 0 && rect.top <= 300;
                 }
                 return false;
@@ -22,6 +29,7 @@ const Documentation = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Smooth scroll to a specific section
     const scrollTo = (id) => {
         const element = document.getElementById(id);
         if (element) {
@@ -30,6 +38,7 @@ const Documentation = () => {
         }
     };
 
+    // Navigation item component for the sticky sidebar
     const NavItem = ({ id, label }) => (
         <button
             onClick={() => scrollTo(id)}

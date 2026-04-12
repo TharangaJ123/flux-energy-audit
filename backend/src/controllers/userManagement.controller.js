@@ -1,10 +1,17 @@
 /**
- * User Controller - Handles user-related HTTP requests
+ * @file userManagement.controller.js
+ * @description Controller for user identity orchestration.
+ * Manages registration, sessions, and core profile metadata.
  */
 const userService = require('../services/userManagement.service');
 const { registerUser, loginUser, updateUser } = require('../validations/userManagement.validation');
 
-// Register a new user
+/**
+ * @description Register a new user and generate access token
+ * @async
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 const register = async (req, res) => {
     try {
         const { error } = registerUser.validate(req.body);

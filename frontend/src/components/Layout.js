@@ -1,4 +1,8 @@
-// Shared page shell that keeps navigation and footer consistent across sections.
+/**
+ * Layout Component
+ * Standard wrapper for all application pages. Provides the persistent Navbar,
+ * consistent page margins, and a comprehensive footer with navigation links.
+ */
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';

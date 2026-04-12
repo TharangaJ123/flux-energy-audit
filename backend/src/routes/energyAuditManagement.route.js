@@ -1,3 +1,7 @@
+/**
+ * @file energyAuditManagement.route.js
+ * @description API endpoints for energy audit orchestration, AI simulations, and ChatPulse.
+ */
 const express = require('express');
 const router = express.Router();
 const energyAuditController = require('../controllers/energyAuditManagement.controller');

@@ -1,4 +1,8 @@
-// Authentication and profile page covering registration, login, and account maintenance.
+/**
+ * UserManagement Component
+ * Handles user authentication lifecycle including registration, login, profile updates,
+ * and account deletion. Persists session state in localStorage.
+ */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../services/api';
@@ -55,6 +59,7 @@ const UserManagement = () => {
         }
     }, []);
 
+    // Process user registration request
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
@@ -90,6 +95,7 @@ const UserManagement = () => {
         }
     };
 
+    // Process user login request
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');

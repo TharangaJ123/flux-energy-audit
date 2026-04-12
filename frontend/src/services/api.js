@@ -1,4 +1,8 @@
-// Centralized API client and feature-specific request helpers for the frontend.
+/**
+ * @file api.js
+ * @description Centralized Axios instance and service definitions.
+ * Configures base URL, authentication interceptors, and typed API helpers for all modules.
+ */
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';

@@ -1,4 +1,8 @@
-// Navigation bar that reflects login state from local storage and current route.
+/**
+ * Navbar Component
+ * Dynamic navigation bar that updates based on authentication state.
+ * Monitors localStorage for token changes on every route update.
+ */
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 

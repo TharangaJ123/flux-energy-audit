@@ -1,4 +1,8 @@
-// Cost management dashboard for bills, goals, estimation, and AI spending insights.
+/**
+ * CostManagement Component
+ * Comprehensive financial dashboard for energy costs. Handles utility bill 
+ * logging, savings goal tracking, and AI-driven cost estimations.
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { costApi } from '../services/api';
@@ -185,6 +189,7 @@ const CostManagement = () => {
     }
   };
 
+  // Refresh cost and goal data from the API
   const fetchCosts = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -743,6 +748,7 @@ const CostManagement = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Logic to generate a printable summary of the last 12 months using a browser popup
   const exportSummaryPdf = () => {
     if (!sortedCosts.length) {
       setError('No cost records available to export');

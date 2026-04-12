@@ -1,3 +1,8 @@
+/**
+ * @file validate.js
+ * @description Generic validation middleware using Joi schemas.
+ * Validates request bodies and returns formatted 400 errors to the client.
+ */
 const Joi = require('joi');
 
 const validate = (schema) => {

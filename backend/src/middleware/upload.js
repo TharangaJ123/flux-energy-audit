@@ -1,3 +1,8 @@
+/**
+ * @file upload.js
+ * @description Middleware for handling file uploads using Multer.
+ * Configures storage, file size limits, and valid mime types for bill documents.
+ */
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');

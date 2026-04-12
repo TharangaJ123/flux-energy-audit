@@ -1,7 +1,17 @@
+/**
+ * @file appliancemanagement.controller.js
+ * @description Controller for appliance discovery and energy analytics.
+ * Bridges the gap between energy services and RESTful requests.
+ */
 const applianceService = require('../services/appliancemanagement.service');
 const { applianceValidationSchema, updateApplianceValidationSchema } = require('../validations/appliancemanagement.validation');
 
-// Create a new appliance record
+/**
+ * @description Create a new appliance record for the authenticated user
+ * @async
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 const createAppliance = async (req, res) => {
     try {
         // Validate request body

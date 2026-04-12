@@ -1,5 +1,7 @@
 /**
- * Auth Middleware - Protects routes and handles authorization
+ * @file auth.js
+ * @description Authentication and authorization middleware.
+ * Handles JWT verification and role-based access control.
  */
 const jwt = require('jsonwebtoken');
 const User = require('../models/userManagement.model');
@@ -21,18 +23,21 @@ const protect = async (req, res, next) => {
 
             next();
         } catch (error) {
-            console.error(error);
+            console.error('JWT Verification Error:', error);
             res.status(401).json({ message: 'Not authorized, token failed' });
         }
     }
 
+    // Token was not provided in headers
     if (!token) {
         res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
 /**
- * Grant access to specific roles
+ * @description Grant access to specific user roles
+ * @param {...string} roles - List of allowed roles
+ * @returns {Function} Middleware function
  */
 const authorize = (...roles) => {
     return (req, res, next) => {

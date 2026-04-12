@@ -8,12 +8,19 @@ import {
 import Layout from '../components/Layout';
 import carbonService from '../services/carbonFootprint.service';
 
+/**
+ * Home Component
+ * The main landing page of the application. It provides an overview of features,
+ * live grid data visualization, and links to various functional modules.
+ */
 const Home = () => {
     const navigate = useNavigate();
+    // State for carbon footprint summary data
     const [latestCarbon, setLatestCarbon] = useState(null);
     const [monthlyAvg, setMonthlyAvg] = useState(null);
     const [monthlyAvgStatus, setMonthlyAvgStatus] = useState(null);
 
+    // Fetch initial data for the dashboard summary
     useEffect(() => {
         const fetchLatestCarbon = async () => {
             try {
@@ -52,6 +59,7 @@ const Home = () => {
         { time: '23:00', load: 1800 },
     ];
 
+    // List of core features displayed in the features grid
     const features = [
         {
             title: 'Cost Management',

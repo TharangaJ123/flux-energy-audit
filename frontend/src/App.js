@@ -1,4 +1,8 @@
-// Top-level client router that maps product sections to their page components.
+/**
+ * App Component
+ * Root component of the Flux Energy Audit application.
+ * Defines the main routing table and view hierarchy using React Router.
+ */
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CostManagement from './pages/CostManagement';

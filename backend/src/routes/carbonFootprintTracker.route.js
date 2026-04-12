@@ -1,4 +1,9 @@
 /**
+ * @file carbonFootprintTracker.route.js
+ * @description API endpoints for tracking carbon emissions from various sources.
+ */
+
+/**
  * @swagger
  * tags:
  *   name: Carbon Footprint
@@ -71,6 +76,7 @@
  *           format: date-time
  */
 
+ */
 const express = require('express');
 const router = express.Router();
 const carbonController = require('../controllers/carbonFootprintTracker.controller');

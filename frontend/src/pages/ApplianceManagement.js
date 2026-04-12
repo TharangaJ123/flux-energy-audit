@@ -4,8 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { applianceApi } from '../services/api';
 import Layout from '../components/Layout';
 
+/**
+ * ApplianceManagement Component
+ * Provides a workspace for managing household appliances, including CRUD operations,
+ * consumption statistics, and energy audit dashboards with weather integration.
+ */
 const ApplianceManagement = () => {
   const navigate = useNavigate();
+  // State management for tabs and data
   const [activeTab, setActiveTab] = useState('list'); // 'list', 'audit', 'stats'
   const [appliances, setAppliances] = useState([]);
   const [stats, setStats] = useState(null);
@@ -17,6 +23,7 @@ const ApplianceManagement = () => {
   const [city, setCity] = useState('Colombo');
   const [cityInput, setCityInput] = useState('Colombo');
 
+  // Detect user's location based on IP to provide localized weather insights
   useEffect(() => {
     const detectLocation = async () => {
       try {
@@ -42,10 +49,12 @@ const ApplianceManagement = () => {
 
   const categories = ['General', 'Kitchen', 'Cooling', 'Entertainment', 'Cleaning', 'Office', 'Other'];
 
+  // Fetch all necessary data including appliances, stats, and audit reports
   const fetchData = useCallback(async (targetCity = city) => {
     setLoading(true);
     setError('');
     try {
+      // Parallel API calls for performance efficiency
       const [applianceRes, statsRes, auditRes] = await Promise.all([
         applianceApi.getAppliances(),
         applianceApi.getApplianceStats(),
@@ -56,6 +65,7 @@ const ApplianceManagement = () => {
       setAuditData(auditRes.data.data || null);
     } catch (err) {
       setError('Failed to fetch pulse data: ' + (err.response?.data?.message || err.message));
+      // Redirect to user management if unauthorized
       if (err.response?.status === 401) navigate('/user-management');
     } finally {
       setLoading(false);
@@ -66,6 +76,7 @@ const ApplianceManagement = () => {
     fetchData();
   }, [fetchData]);
 
+  // Create a new appliance or update an existing one
   const handleAddOrUpdate = async (e) => {
     e.preventDefault();
     setError('');
@@ -84,6 +95,7 @@ const ApplianceManagement = () => {
       } else {
         await applianceApi.createAppliance(data);
       }
+      // Reset form and refresh data
       setApplianceForm({ name: '', powerConsumption: '', usageHours: '', category: 'General' });
       setEditingId(null);
       setShowForm(false);

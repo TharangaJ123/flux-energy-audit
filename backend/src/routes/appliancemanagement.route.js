@@ -1,3 +1,7 @@
+/**
+ * @file appliancemanagement.route.js
+ * @description API endpoints for appliance inventory and consumption statistics.
+ */
 const express = require('express');
 const router = express.Router();
 const applianceController = require('../controllers/appliancemanagement.controller');

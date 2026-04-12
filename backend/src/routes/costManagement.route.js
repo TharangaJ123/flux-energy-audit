@@ -1,3 +1,8 @@
+/**
+ * @file costManagement.route.js
+ * @description API endpoints for cost tracking, budget goals, and bill estimation.
+ * Handles both manual entry and file-based utility bill uploads.
+ */
 const express = require('express');
 const router = express.Router();
 const costController = require('../controllers/costManagement.controller');

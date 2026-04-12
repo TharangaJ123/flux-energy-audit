@@ -1,4 +1,8 @@
-// Carbon tracking dashboard for recording activities and visualizing emission trends.
+/**
+ * CarbonTracker Component
+ * Dashboard for monitoring environmental impact. Allows users to log monthly
+ * consumption data (electricity, gas, transport) and view emission trends and insights.
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import carbonService from '../services/carbonFootprint.service';
@@ -22,6 +26,8 @@ const TRANSPORT_TYPES = [
 
 const CarbonTracker = () => {
   const navigate = useNavigate();
+
+  // Unified state for carbon records and UI controls
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,6 +35,7 @@ const CarbonTracker = () => {
   const [activeTab, setActiveTab] = useState('records');
   const [editingRecord, setEditingRecord] = useState(null);
 
+  // Form state for recording monthly footprints
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
     month: String(new Date().getMonth() + 1),
@@ -41,6 +48,7 @@ const CarbonTracker = () => {
     waste: ''
   });
 
+  // Fetch carbon footprint history from the backend
   const fetchRecords = useCallback(async () => {
     setLoading(true);
     setError('');

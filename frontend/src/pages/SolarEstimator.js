@@ -1,4 +1,8 @@
-// Solar estimator page for rough rooftop solar sizing, cost, and payback calculations.
+/**
+ * SolarEstimator Component
+ * Tool for calculating rooftop solar potential. Provides technical sizing, 
+ * financial ROI analysis (LKR), and environmental impact reports.
+ */
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { solarApi } from '../services/api';
@@ -25,6 +29,7 @@ const SolarEstimator = () => {
   const [location, setLocation] = useState({ lat: null, lon: null });
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  // Request user's geolocation to provide coordinates to the NREL solar API
   const fetchLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser.');
@@ -67,6 +72,7 @@ const SolarEstimator = () => {
     }
   };
 
+  // Logic to generate and download a technical PDF report using jsPDF
   const handleDownloadPDF = () => {
     if (!result) return;
 
