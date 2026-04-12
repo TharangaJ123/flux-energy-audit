@@ -15,7 +15,7 @@ scenarios:
       - post:
           url: "/api/costs/estimate"
           headers:
-            Authorization: "Bearer demo-token"
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
           json:
             units: 120
             month: 4
@@ -24,4 +24,4 @@ scenarios:
       - get:
           url: "/api/costs/ai-insights"
           headers:
-            Authorization: "Bearer demo-token"
+            Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
