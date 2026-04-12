@@ -76,7 +76,6 @@
  *           format: date-time
  */
 
- */
 const express = require('express');
 const router = express.Router();
 const carbonController = require('../controllers/carbonFootprintTracker.controller');
