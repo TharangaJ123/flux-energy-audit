@@ -14,114 +14,119 @@ Welcome to **Flux Energy Audit**, a sophisticated web-based toolkit designed to 
 
 ## 🚀 Setup Instructions
 
-Follow these steps to get the full application running on your local machine.
+Follow these step-by-step instructions to get the Flux Energy Audit project running on your local development environment.
 
 ### 1. Prerequisites
 - **Node.js**: v18.0.0 or higher
-- **MongoDB**: A local instance or a MongoDB Atlas connection string
+- **MongoDB**: A local MongoDB instance (port 27017) or a MongoDB Atlas connection string
 - **Git**: For version control
 
 ### 2. Repository Setup
+Clone the repository to your local machine:
 ```bash
 git clone <repository-url>
 cd flux-energy-audit
 ```
 
-### 3. Backend Configuration
+### 3. Backend Configuration & Startup
 1. Navigate to the backend directory:
    ```bash
    cd backend
    ```
-2. Install dependencies:
+2. Install necessary Node.js dependencies:
    ```bash
    npm install
    ```
-3. Create a `.env` file in the `backend/` folder:
+3. Create a `.env` file in the `root` of your `backend/` folder and include the required environment variables:
    ```env
    PORT=5000
    MONGODB_URI=mongodb://localhost:27017/flux
-   JWT_SECRET=your_jwt_secret_key
+   JWT_SECRET=your_super_secret_jwt_key
    GEMINI_API_KEY=your_google_gemini_api_key
    WEATHER_API_KEY=your_openweather_key
    NREL_API_KEY=your_nrel_api_key
    CLIMATIQ_API_KEY=your_climatiq_key
+   NODE_ENV=development
    ```
-4. Start the server:
+4. Start the backend server in development mode:
    ```bash
    npm run dev
    ```
+   *The backend should now be running on `http://localhost:5000`.*
 
-### 4. Frontend Configuration
-1. Open a new terminal and navigate to the frontend directory:
+### 4. Frontend Configuration & Startup
+1. Open a new terminal window/tab and navigate to the frontend directory:
    ```bash
    cd frontend
    ```
-2. Install dependencies:
+2. Install Frontend Node.js dependencies:
    ```bash
    npm install
    ```
-3. Start the React development server:
+3. *(Optional)* Configure frontend environment variables. Create a `.env` file in the `frontend/` folder:
+   ```env
+   REACT_APP_API_URL=http://localhost:5000/api
+   ```
+4. Start the React development server:
    ```bash
    npm start
    ```
-The application will be available at `http://localhost:3000`.
+   *The application will automatically open in your default browser at `http://localhost:3000`.*
 
 ---
 
 ## 🔌 API Endpoint Documentation
 
-The Flux API follows RESTful principles and uses JWT for authentication.
+The Flux API follows RESTful architectural principles. It accepts and returns JSON payloads. Authentication is handled via JSON Web Tokens (JWT).
 
-### **Authentication**
-- **Requirements**: Most endpoints require a `Authorization: Bearer <token>` header.
-- **Login/Register**: Publicly accessible.
+### **Authentication Requirements**
+- Most endpoints require an `Authorization` header containing a valid Bearer token: `Authorization: Bearer <token>`
+- User Registration and Login are publicly accessible.
 
 ### **1. User Management**
+
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
-| POST | `/api/users/register` | Register a new user | No |
-| POST | `/api/users/login` | Login and receive a JWT | No |
-| GET | `/api/users/profile` | Get current user's profile | Yes |
+| `POST` | `/api/users/register` | Register a new user | No |
+| `POST` | `/api/users/login` | Login and receive a JWT | No |
+| `GET` | `/api/users/profile` | Get logged-in user's profile | Yes |
+
+**Example Request: User Login (`POST /api/users/login`)**
+```json
+// Request Body
+{
+  "email": "user@example.com",
+  "password": "securepassword123"
+}
+```
+**Example Response (200 OK):**
+```json
+{
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR...",
+  "user": {
+    "id": "64f1a2...",
+    "name": "Jane Doe",
+    "email": "user@example.com"
+  }
+}
+```
 
 ### **2. Appliance Management**
+
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
-| POST | `/api/appliances` | Register a new household device | Yes |
-| GET | `/api/appliances` | List all user devices | Yes |
-| PUT | `/api/appliances/:id` | Update device parameters | Yes |
-| DELETE| `/api/appliances/:id` | Remove a device record | Yes |
-| GET | `/api/appliances/audit` | Get weather-aware energy insights | Yes |
+| `POST` | `/api/appliances` | Register a new appliance | Yes |
+| `GET` | `/api/appliances` | List all appliances for user | Yes |
+| `GET` | `/api/appliances/:id`| Retrieve specific appliance | Yes |
+| `PUT` | `/api/appliances/:id`| Update appliance parameters | Yes |
+| `DELETE`| `/api/appliances/:id`| Remove an appliance record | Yes |
+| `GET` | `/api/appliances/audit`| Get weather-aware energy insights| Yes |
+| `GET` | `/api/appliances/stats`| Get overall statistical summary | Yes |
 
-### **3. Carbon Footprint Tracker**
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/carbon` | Log monthly consumption data | Yes |
-| GET | `/api/carbon` | View carbon history & status | Yes |
-
-### **4. Energy Audit Management**
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/audits` | Create a comprehensive energy audit | Yes |
-| GET | `/api/audits` | Retrieve user audit history | Yes |
-| POST | `/api/audits/chat` | AI-driven chat pulse analysis | Yes |
-| POST | `/api/audits/simulate`| Habit change impact projection | Yes |
-
-### **5. Solar Potential Estimator**
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/solar/estimate`| Solar capacity & ROI calculation | No |
-
-### **6. Electricity Cost & Goals**
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/costs` | Log monthly electricity cost | Yes |
-| POST | `/api/costs/estimate`| Tariff-based bill estimation | Yes |
-| POST | `/api/costs/goals` | Set monthly/yearly saving goals | Yes |
-| GET | `/api/costs/ai-insights`| AI-driven spending patterns | Yes |
-
-### **Example Request (Create Appliance)**
-**POST** `http://localhost:5000/api/appliances`
+**Example Request: Create Appliance (`POST /api/appliances`)**
 ```json
+// Request Body
 {
   "name": "Air Conditioner",
   "powerConsumption": 1500,
@@ -129,11 +134,113 @@ The Flux API follows RESTful principles and uses JWT for authentication.
   "category": "Cooling"
 }
 ```
-**Response (201 Created)**
+**Example Response (201 Created):**
 ```json
 {
   "message": "Appliance added successfully",
-  "data": { "id": "64f...", "name": "Air Conditioner", "dailyKWh": 12 }
+  "data": { 
+    "id": "64f...", 
+    "name": "Air Conditioner", 
+    "powerConsumption": 1500,
+    "usageHours": 8,
+    "category": "Cooling",
+    "dailyEnergyConsumption": 12 
+  }
+}
+```
+
+### **3. Carbon Footprint Tracker**
+
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/carbon` | Log monthly consumption data | Yes |
+| `GET` | `/api/carbon` | View carbon history & footprint| Yes |
+
+**Example Request: Log Data (`POST /api/carbon`)**
+```json
+{
+  "month": "April",
+  "year": 2024,
+  "electricityUsedKwh": 350
+}
+```
+**Example Response (201 Created):**
+```json
+{
+  "message": "Data logged successfully",
+  "data": { "carbonFootprintKg": 145.2 }
+}
+```
+
+### **4. Energy Audit Management**
+
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/audits` | Create an energy audit | Yes |
+| `GET` | `/api/audits` | Retrieve user audit history | Yes |
+| `POST` | `/api/audits/chat` | AI-driven conversational insights| Yes |
+| `POST` | `/api/audits/simulate`| Habit change impact projection | Yes |
+
+**Example Request: Run Simulation (`POST /api/audits/simulate`)**
+```json
+{
+  "proposedChanges": [
+    { "applianceId": "64f...", "newUsageHours": 4 }
+  ]
+}
+```
+**Example Response (200 OK):**
+```json
+{
+  "message": "Simulation complete",
+  "projectedSavingsKwh": 48.5,
+  "financialSavings": 12.50
+}
+```
+
+### **5. Solar Potential Estimator**
+
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/solar/estimate`| Solar capacity & ROI calculation | No |
+
+**Example Request: Estimate Solar (`POST /api/solar/estimate`)**
+```json
+{
+  "roofSizeSqMeters": 50,
+  "location": "Colombo"
+}
+```
+**Example Response (200 OK):**
+```json
+{
+  "estimatedCapacityKw": 7.5,
+  "projectedAnnualSavingsKwh": 10500,
+  "estimatedROIYears": 4.2
+}
+```
+
+### **6. Electricity Cost & Goals**
+
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/costs` | Log monthly electricity cost | Yes |
+| `POST` | `/api/costs/estimate`| Tariff-based bill estimation | Yes |
+| `POST` | `/api/costs/goals` | Set monthly/yearly saving goals | Yes |
+| `GET` | `/api/costs/ai-insights`| AI-driven spending patterns | Yes |
+
+**Example Request: Set Goal (`POST /api/costs/goals`)**
+```json
+{
+  "targetMonthlyCost": 2500,
+  "targetCurrency": "LKR"
+}
+```
+**Example Response (201 Created):**
+```json
+{
+  "message": "Goal configured successfully",
+  "data": { "targetMonthlyCost": 2500 }
 }
 ```
 
@@ -141,53 +248,73 @@ The Flux API follows RESTful principles and uses JWT for authentication.
 
 ## 🧪 Testing Instruction Report
 
-Flux Energy Audit maintains a standard of "Excellent" (100% marks) by incorporating high-coverage unit, integration, and performance testing.
+The Flux Energy Audit system maintains an "Excellent" reliability standard through rigorous automated testing, targeting high coverage for unit, integration, and performance layers.
 
-### **1. Testing Environment**
-- **Framework**: Jest & Supertest (Backend), React Testing Library (Frontend)
-- **Database**: Uses a separate test database or transactions to ensure clean state.
-- **Performance**: Artillery.io for load simulation.
+### **i. Testing Environment Configuration Details**
+- **Test Frameworks**: `Jest` and `Supertest` (Backend API), `React Testing Library` (Frontend Components).
+- **In-Memory/Isolated Databases**: Backend tests utilize a mock MongoDB setup or isolated database instances via `npm test` configuration to prevent data contamination.
+- **Load Testing**: Uses `Artillery.io` for robust endpoint stress simulation.
 
-### **2. Execution Commands**
+### **ii. How to Run Unit Tests**
+Unit tests isolate business logic, services, and controllers without external dependencies.
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Execute the unit test suite:
+   ```bash
+   npm test
+   ```
+   *(To test a specific module, e.g., appliance controller: `npx jest tests/appliancemanagement.controller.test.js`)*
+3. **Verify Code Coverage**:
+   ```bash
+   npm run test:coverage
+   ```
+   This generates an HTML report in `backend/coverage/` verifying the percentage of code executed by tests.
 
-#### **Unit & Integration Testing (Backend)**
-Run the entire suite of 13+ test files covering all controllers and services:
-```bash
-cd backend
-npm test
-```
-To check coverage:
-```bash
-npm run test:coverage
-```
+### **iii. Integration Testing Setup and Execution**
+Integration testing ensures different modules (Router → Controller → Services → Database) function correctly together.
+1. Ensure your `.env` contains valid configurations (often Jest overrides this with a test DB URI).
+2. Execute integration-specific tests using:
+   ```bash
+   npx jest *.integration.test.js
+   ```
+   *(e.g., testing full appliance life cycle via `appliancemanagement.integration.test.js`)*
 
-#### **Performance Testing**
-Artillery is used to simulate user stress on the Cost and Appliance modules.
-1. Start the server (`npm start`).
-2. Execute the perf runner:
-```bash
-cd backend
-npm run test:performance
-```
-*Scenario file location*: `backend/tests/performance/appliance-load.yml`
+### **iv. Performance Testing Setup and Execution**
+We use Artillery to validate system performance under load.
+1. Ensure the backend server is running in a separate terminal:
+   ```bash
+   cd backend
+   npm start
+   ```
+2. Run the predefined Artillery scenarios:
+   ```bash
+   cd backend
+   npm run test:performance
+   ```
+3. Load test definitions can be modified in `backend/tests/performance/appliance-load.yml` to alter virtual user (VUs) injection rates and concurrent requests.
 
 ---
 
 ## 🚀 Deployment Report
 
-### **Deployment Overview**
-The application is architected for modern cloud deployment platforms.
+### **Deployment Architecture Overview**
+The application adheres to cloud-native best practices to ensure continuous availability, scalability, and fast read operations.
 
-| Component | Target Platform | Status |
+| Architecture Component | Recommended Provider | Current Status |
 | :--- | :--- | :--- |
-| **Frontend** | Vercel / Netlify | **Ready for Production** |
-| **Backend** | Render / Heroku | **Ready for Production** |
-| **Database** | MongoDB Atlas | **Live / Configured** |
+| **Frontend UI (React)** | Vercel / Netlify | **Ready for Production** |
+| **Backend REST API (Node)** | Render / Railway / Heroku | **Ready for Production** |
+| **NoSQL Database** | MongoDB Atlas Cloud | **Live / Configured** |
 
-### **Configuration Details**
-1. **Frontend**: Environment variables configured for production API endpoint (`REACT_APP_API_URL`).
-2. **Backend**: Optimized `cors` configuration and production `.env` setup.
-3. **Continuous Integration**: Git standard workflow is used to maintain code quality before deployment.
+### **CI/CD & Configuration Details**
+1. **Frontend**: Distributed globally via CDN. Build commands are optimized.
+   - *Environment Variable*: `REACT_APP_API_URL` securely points to the live backend server.
+   - *Build Command*: `npm run build` generates minimized static files.
+2. **Backend**: Scalable container-based instance.
+   - *CORS*: Configuration explicitly locked to trusted frontend domains to prevent CSRF and cross-origin abuse.
+   - *Secrets Management*: Environment keys like `JWT_SECRET` and `GEMINI_API_KEY` are safely injected via the deployment provider's dashboard, not checked into source control.
+3. **Delivery Pipeline**: Commits to the main Git branch can trigger webhook-based auto-deployments on Render/Vercel to propagate bug fixes implicitly.
 
 ---
-
