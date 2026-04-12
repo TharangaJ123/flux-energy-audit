@@ -319,7 +319,7 @@ The application adheres to cloud-native best practices to ensure continuous avai
 | :--- | :--- | :--- |
 | **Frontend UI (React)** | Vercel | **Live** |
 | **Backend REST API (Node)** | Railway | **Live** |
-| **NoSQL Database** | MongoDB Atlas Cloud | **Live ** |
+| **NoSQL Database** | MongoDB Atlas Cloud | **Live** |
 
 ### **CI/CD & Configuration Details**
 1. **Frontend**: Distributed globally via CDN. Build commands are optimized.
