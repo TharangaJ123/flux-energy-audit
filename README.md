@@ -269,27 +269,46 @@ Unit tests isolate business logic, services, and controllers without external de
    ```bash
    cd backend
    ```
-2. Execute the unit test suite:
-   ```bash
-   npm test
-   ```
-   *(To test a specific module, e.g., user controller: `npx jest tests/userManagement.controller.test.js`)*
+2. **Run Specific Feature Tests**:
+   To test a specific module, use the following commands:
+
+   | Feature | Command |
+   | :--- | :--- |
+   | **All Features** | `npm test` |
+   | **User Management** | `npm test -- tests/userManagement` |
+   | **Appliance Management** | `npm test -- tests/appliancemanagement` |
+   | **Carbon Footprint** | `npm test -- tests/carbonFootprintTracker` |
+   | **Energy Audit** | `npm test -- tests/energyAuditManagement` |
+   | **Cost Management** | `npm test -- tests/costManagement` |
+   | **Solar Estimator** | `npm test -- tests/solarEstimator` |
+
 3. **Verify Code Coverage**:
    ```bash
    npm run test:coverage
    ```
-   This generates an HTML report in `backend/coverage/` verifying the percentage of code executed by tests. High coverage is maintained across all core services.
+   This generates an HTML report in `backend/coverage/index.html` verifying the percentage of code executed by tests. High coverage is maintained across all core services.
 
-### **ii. Integration Testing Setup and Execution**
-Integration testing ensures different modules (Router → Controller → Services → Database) function correctly together as a unified system.
-1. **Setup**: Ensure your `.env` contains valid configurations. The test suite automatically utilizes a separate test configuration or mock to prevent production data contamination.
-2. **Execution**: Execute all integration-specific tests using:
+### **ii. How to Run Frontend Tests**
+Frontend tests use `React Testing Library` and `Jest` to validate UI components and flows.
+1. Navigate to the frontend directory:
    ```bash
-   npx jest *.integration.test.js
+   cd frontend
+   ```
+2. Execute the test runner:
+   ```bash
+   npm test
+   ```
+   *(For a single run in CI environments: `npm run test:ci`)*
+
+### **iii. Integration Testing Setup and Execution**
+Integration testing ensures different modules (Router → Controller → Services → Database) function correctly together.
+1. **Execution**: Execute all integration-specific tests using:
+   ```bash
+   npm test -- .integration.test.js
    ```
    This validates the full request-response lifecycle, including middleware and database persistence for routes like `/api/appliances` and `/api/users`.
 
-### **iii. Performance Testing Setup and Execution**
+### **iv. Performance Testing Setup and Execution**
 We use **Artillery.io** to validate system stability and responsiveness under concurrent user load.
 1. **Preparation**: Start the backend server in a dedicated terminal:
    ```bash
@@ -301,12 +320,11 @@ We use **Artillery.io** to validate system stability and responsiveness under co
    cd backend
    npm run test:performance
    ```
-3. **Configuration**: Load test definitions (inject rates, duration, and virtual users) can be modified in `backend/tests/performance/appliance-load.yml` or `costs-load.yml` to stress-test specific modules.
+3. **Configuration**: Load test definitions can be modified in `backend/tests/performance/` (e.g., `costs-load.yml`) to stress-test specific modules.
 
-### **iv. Testing Environment Configuration Details**
+### **v. Testing Environment Configuration Details**
 - **Frameworks**: `Jest` and `Supertest` for API testing; `React Testing Library` for frontend component validation.
-- **Environment**: Backend tests are configured to run in a `test` environment, often using an in-memory database or a dedicated MongoDB test cluster.
-- **Data Integrity**: Tests include setup and teardown hooks (in `tests/setup.js`) to ensure a clean state before every test run, preventing cross-test pollution.
+- **Environment**: Backend tests run in a `test` environment. Cleanup is handled automatically in `tests/setup.js`.
 
 ---
 

@@ -77,51 +77,70 @@ npm run dev
 npm start
 ```
 
-## 🧪 Testing
+## 🧪 Testing Instruction Report
 
-The backend test suite uses **Jest** for unit tests, **Supertest** for route-level integration tests, and **Artillery** for performance testing.
+The Flux Energy Audit system maintains an "Excellent" reliability standard through rigorous automated testing, targeting high coverage for unit, integration, and performance layers.
 
-### Run Unit and Integration Tests
+### 🧪 i. How to Run Unit Tests
 
+Unit tests isolate business logic, services, and controllers without external dependencies to ensure core logic correctness.
+
+#### Run All Tests
 ```bash
 npm test
 ```
 
-### Run Tests with Coverage
+#### Run Specific Feature Tests
+To run unit and integration tests for a specific feature, use the following commands:
 
+| Feature | Command |
+| :--- | :--- |
+| **All Features** | `npm test` |
+| **User Management** | `npm test -- tests/userManagement` |
+| **Appliance Management** | `npm test -- tests/appliancemanagement` |
+| **Carbon Footprint** | `npm test -- tests/carbonFootprintTracker` |
+| **Energy Audit** | `npm test -- tests/energyAuditManagement` |
+| **Cost Management** | `npm test -- tests/costManagement` |
+| **Solar Estimator** | `npm test -- tests/solarEstimator` |
+
+#### Run Tests with Coverage
+Verify which parts of your code are tested:
 ```bash
 npm run test:coverage
 ```
+This generates an HTML report in `backend/coverage/index.html`.
 
-### Test Coverage Scope
+---
 
-Current backend coverage includes:
+### 🔗 ii. Integration Testing Execution
+Integration testing ensures different modules (Router → Controller → Services → Database) function correctly together.
+- **Execution**: Run all integration-specific tests:
+  ```bash
+  npm test -- .integration.test.js
+  ```
 
-- User management controller tests
-- Cost management controller tests
-- Appliance management controller tests
-- Energy audit controller tests
-- API integration tests for major authenticated routes
+---
 
-### Run Performance Test
+### ⚡ iii. Performance Testing Execution
+We use **Artillery.io** to validate system stability under concurrent user load.
 
-Start the backend first:
+1. **Start the backend server**:
+   ```bash
+   npm start
+   ```
 
-```bash
-npm start
-```
+2. **Run performance scenarios** (in a new terminal):
+   ```bash
+   npm run test:performance
+   ```
 
-Then, in another terminal, run:
+---
 
-```bash
-npm run test:performance
-```
+### ⚙️ iv. Testing Environment Details
+- **Frameworks**: `Jest` and `Supertest`.
+- **Environment**: Backend tests run in a `test` NODE_ENV.
+- **Cleanup**: The `tests/setup.js` ensures a clean database state before every test.
 
-Artillery scenario file:
-
-```text
-tests/performance/costs-load.yml
-```
 
 ## 🔋 Advanced: Cost Estimation with Tariff Sources
 
