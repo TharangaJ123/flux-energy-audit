@@ -1,4 +1,11 @@
-// Unit tests for cost controller flows that normalize payloads and surface API responses.
+/**
+ * @file costManagement.controller.test.js
+ * @description Unit tests for the Cost Management controller.
+ * Verifies payload normalisation (string-to-number coercion), Joi validation
+ * gating, HTTP status code mapping, and AI insights response pass-through.
+ * Both the cost service and file-scan service are Jest-mocked to keep tests
+ * fast and free of database or filesystem side-effects.
+ */// Unit tests for cost controller flows that normalize payloads and surface API responses.
 jest.mock('../src/services/costManagement.service', () => ({
     createCost: jest.fn(),
     getCosts: jest.fn(),

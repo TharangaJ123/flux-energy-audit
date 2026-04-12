@@ -1,11 +1,25 @@
+/**
+ * @file costManagement.controller.js
+ * @description Controller for electricity cost tracking and bill management.
+ * Handles monthly cost records, file (bill) uploads, tariff-based estimation,
+ * AI-driven spending insights, and per-user cost goals.
+ *
+ * Payload normalisation helpers (`normalizeCreatePayload`, `normalizeUpdatePayload`)
+ * accept both form-encoded strings and JSON numbers for numeric fields so that
+ * multipart and JSON clients work identically.
+ */
 const costService = require('../services/costManagement.service');
 const { createCost, updateCost, estimateCost } = require('../validations/costManagement.validation');
 const { enqueueFileScan } = require('../services/fileScan.service');
 const fs = require('fs');
 const path = require('path');
 
-// Controller handlers for electricity costs.
-
+/**
+ * Coerce string fields sent via multipart form into their numeric equivalents.
+ * Supports `electricityCost` as a legacy alias for `amount`.
+ * @param {Object} body - Raw request body.
+ * @returns {Object} Normalised payload ready for Joi validation.
+ */
 const normalizeCreatePayload = (body) => ({
     month: typeof body.month === 'string' ? parseInt(body.month, 10) : body.month,
     year: typeof body.year === 'string' ? parseInt(body.year, 10) : body.year,
@@ -17,6 +31,12 @@ const normalizeCreatePayload = (body) => ({
     notes: body.notes,
 });
 
+/**
+ * Merge update fields while preserving any unchanged values in the body.
+ * Only converts numeric fields when they are explicitly provided.
+ * @param {Object} body - Raw request body from a PUT request.
+ * @returns {Object} Normalised update payload.
+ */
 const normalizeUpdatePayload = (body) => {
     const payload = {
         ...body,
@@ -39,6 +59,12 @@ const normalizeUpdatePayload = (body) => {
     return payload;
 };
 
+/**
+ * Remove a file from disk, silently no-ops when the path is absent.
+ * Used to clean up orphaned uploads after failed DB writes or document replacements.
+ * @async
+ * @param {string|null} absolutePath - Absolute path to the file.
+ */
 const removeUploadedFile = async (absolutePath) => {
     if (!absolutePath || !fs.existsSync(absolutePath)) {
         return;
@@ -47,6 +73,11 @@ const removeUploadedFile = async (absolutePath) => {
     await fs.promises.unlink(absolutePath);
 };
 
+/**
+ * Resolve a relative `/uploads/…` path stored in MongoDB to an absolute filesystem path.
+ * @param {string|null} documentPath - Relative path beginning with an optional `/`.
+ * @returns {string|null} Absolute path, or null if no path is supplied.
+ */
 const resolveStoredDocumentPath = (documentPath) => {
     if (!documentPath) {
         return null;
@@ -56,7 +87,14 @@ const resolveStoredDocumentPath = (documentPath) => {
     return path.join(__dirname, '..', '..', normalizedPath);
 };
 
-// Create a monthly electricity cost record.
+/**
+ * @description Create a monthly electricity cost record.
+ * Accepts an optional bill document upload (via `req.file`).
+ * Enqueues a background malware/content scan for uploaded files.
+ * @async
+ * @param {Object} req - Express request with user, body, and optional `req.file`.
+ * @param {Object} res - Express response object.
+ */
 const create = async (req, res) => {
     try {
         const payload = normalizeCreatePayload(req.body);
@@ -99,7 +137,12 @@ const create = async (req, res) => {
     }
 };
 
-// List all electricity cost records for the authenticated user.
+/**
+ * @description List all electricity cost records for the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const list = async (req, res) => {
     try {
         const costs = await costService.getCosts(req.user._id);
@@ -109,7 +152,13 @@ const list = async (req, res) => {
     }
 };
 
-// Get one electricity cost record by id.
+/**
+ * @description Get a single electricity cost record by its MongoDB ID.
+ * Returns 400 for malformed IDs and 404 when the record does not exist.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const getById = async (req, res) => {
     try {
         const cost = await costService.getCostById(req.user._id, req.params.id);
@@ -125,7 +174,14 @@ const getById = async (req, res) => {
     }
 };
 
-// Update an existing electricity cost record.
+/**
+ * @description Update an existing electricity cost record.
+ * Replaces the associated bill document when a new file is uploaded;
+ * the old document is deleted from disk after a successful DB write.
+ * @async
+ * @param {Object} req - Express request with `req.params.id`, user, body, and optional file.
+ * @param {Object} res - Express response object.
+ */
 const update = async (req, res) => {
     try {
         const payload = normalizeUpdatePayload(req.body);
@@ -177,7 +233,12 @@ const update = async (req, res) => {
     }
 };
 
-// Delete an electricity cost record.
+/**
+ * @description Delete an electricity cost record and remove its associated bill document.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const remove = async (req, res) => {
     try {
         const result = await costService.deleteCost(req.user._id, req.params.id);
@@ -195,7 +256,13 @@ const remove = async (req, res) => {
     }
 };
 
-// Estimate a tariff-based electricity bill with detailed breakdown.
+/**
+ * @description Estimate a tariff-based electricity bill with a fully itemised breakdown.
+ * Delegates computation to the cost service which applies current Sri Lankan tariff tiers.
+ * @async
+ * @param {Object} req - Express request with validated body (units, month, provider, etc.).
+ * @param {Object} res - Express response object.
+ */
 const estimate = async (req, res) => {
     try {
         const { error, value } = estimateCost.validate(req.body);
@@ -216,7 +283,13 @@ const estimate = async (req, res) => {
     }
 };
 
-// Download a bill document through an authenticated endpoint.
+/**
+ * @description Stream a stored bill document to the client as a file download.
+ * Returns 404 when the record has no attached document or the file is missing on disk.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const downloadDocument = async (req, res) => {
     try {
         const cost = await costService.getCostById(req.user._id, req.params.id);
@@ -242,7 +315,13 @@ const downloadDocument = async (req, res) => {
     }
 };
 
-// Get AI-driven spending insights.
+/**
+ * @description Generate AI-powered spending insights based on the user's cost history.
+ * Analyzes patterns across utility types and generates actionable recommendations.
+ * @async
+ * @param {Object} req - Express request with `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const getAIInsights = async (req, res) => {
     try {
         const insights = await costService.getAIInsights(req.user._id);

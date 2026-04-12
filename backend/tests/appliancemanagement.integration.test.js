@@ -1,10 +1,25 @@
+/**
+ * @file appliancemanagement.integration.test.js
+ * @description Integration tests for the Appliance Management REST API.
+ *
+ * Tests run against a real MongoDB connection (via the global setup in `tests/setup.js`)
+ * so that the full request → route → controller → service → database round-trip is exercised.
+ *
+ * External dependencies that are not under test (authentication middleware and the
+ * weather service) are Jest-mocked to keep tests deterministic and avoid network calls.
+ */
 const request = require('supertest');
 const mongoose = require('mongoose');
 const createApp = require('../src/app');
 const Appliance = require('../src/models/appliancemanagement.model');
 const weatherService = require('../src/services/weatherService');
 
-// Mock Auth Middleware
+// ─── Mocks ──────────────────────────────────────────────────────────────────
+
+/**
+ * Replace the real auth middleware with a passthrough stub that injects a fixed
+ * test user into `req.user`. This allows all routes to proceed without a real JWT.
+ */
 jest.mock('../src/middleware/auth', () => ({
     protect: (req, res, next) => {
         req.user = { id: '60d5ecb8b39d1c0015f1a234', _id: '60d5ecb8b39d1c0015f1a234', role: 'user' };
@@ -13,7 +28,10 @@ jest.mock('../src/middleware/auth', () => ({
     authorize: (...roles) => (req, res, next) => next()
 }));
 
-// Mock Weather Service
+/**
+ * Mock the weather service so energy-audit tests do not depend on an external API.
+ * The resolved value mirrors the shape returned by the real service.
+ */
 jest.mock('../src/services/weatherService', () => ({
     getCurrentWeather: jest.fn()
 }));
@@ -21,6 +39,7 @@ jest.mock('../src/services/weatherService', () => ({
 describe('Appliance Management Integration Tests', () => {
     let app;
 
+    // Initialise the Express app and pre-configure weather service mock results.
     beforeAll(() => {
         app = createApp();
         weatherService.getCurrentWeather.mockResolvedValue({
@@ -32,11 +51,13 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // Clear all appliance records and reset mock state before each test to avoid cross-test contamination.
     beforeEach(async () => {
         await Appliance.deleteMany({});
         jest.clearAllMocks();
     });
 
+    /** Baseline appliance payload reused across multiple test cases. */
     const mockAppliance = {
         name: 'Test Air Conditioner',
         powerConsumption: 1500,
@@ -44,6 +65,7 @@ describe('Appliance Management Integration Tests', () => {
         category: 'Cooling'
     };
 
+    // ── POST /api/appliances ─────────────────────────────────────────────────
     describe('POST /api/appliances', () => {
         test('should create a new appliance with valid data', async () => {
             const response = await request(app)
@@ -69,6 +91,7 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // ── GET /api/appliances ──────────────────────────────────────────────────
     describe('GET /api/appliances', () => {
         test('should retrieve all appliances for the user', async () => {
             await Appliance.create({ ...mockAppliance, user: '60d5ecb8b39d1c0015f1a234' });
@@ -82,6 +105,7 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // ── GET /api/appliances/:id ──────────────────────────────────────────────
     describe('GET /api/appliances/:id', () => {
         test('should retrieve a single appliance by ID', async () => {
             const created = await Appliance.create({ ...mockAppliance, user: '60d5ecb8b39d1c0015f1a234' });
@@ -100,6 +124,7 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // ── PUT /api/appliances/:id ──────────────────────────────────────────────
     describe('PUT /api/appliances/:id', () => {
         test('should update an existing appliance', async () => {
             const created = await Appliance.create({ ...mockAppliance, user: '60d5ecb8b39d1c0015f1a234' });
@@ -114,6 +139,7 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // ── DELETE /api/appliances/:id ───────────────────────────────────────────
     describe('DELETE /api/appliances/:id', () => {
         test('should delete an appliance', async () => {
             const created = await Appliance.create({ ...mockAppliance, user: '60d5ecb8b39d1c0015f1a234' });
@@ -128,6 +154,7 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // ── GET /api/appliances/audit ────────────────────────────────────────────
     describe('GET /api/appliances/audit', () => {
         test('should return energy audit report with weather insights', async () => {
             await Appliance.create({ ...mockAppliance, user: '60d5ecb8b39d1c0015f1a234' });
@@ -154,6 +181,7 @@ describe('Appliance Management Integration Tests', () => {
         });
     });
 
+    // ── GET /api/appliances/stats ────────────────────────────────────────────
     describe('GET /api/appliances/stats', () => {
         test('should return statistical summary', async () => {
             await Appliance.create({ ...mockAppliance, user: '60d5ecb8b39d1c0015f1a234' });

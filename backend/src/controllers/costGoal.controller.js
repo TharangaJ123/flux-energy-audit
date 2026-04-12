@@ -1,9 +1,19 @@
+/**
+ * @file costGoal.controller.js
+ * @description Controller for managing per-user electricity cost goals.
+ * Supports monthly and yearly budget targets across all supported utility types.
+ * Validates incoming requests and delegates persistence to the cost goal service.
+ */
 const costGoalService = require('../services/costGoal.service');
 const { createGoal, updateGoal } = require('../validations/costGoal.validation');
 
-// Simple controller handlers for cost goals.
-
-// Create a new cost goal for the authenticated user.
+/**
+ * @description Create a new cost goal for the authenticated user.
+ * Returns 400 for duplicate periods, invalid goal types, or business rule violations.
+ * @async
+ * @param {Object} req - Express request with `req.user._id` and validated body.
+ * @param {Object} res - Express response object.
+ */
 const create = async (req, res) => {
     try {
         const { error } = createGoal.validate(req.body);
@@ -27,7 +37,12 @@ const create = async (req, res) => {
     }
 };
 
-// List all cost goals for the authenticated user.
+/**
+ * @description List all cost goals belonging to the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const list = async (req, res) => {
     try {
         const goals = await costGoalService.getGoals(req.user._id);
@@ -37,7 +52,12 @@ const list = async (req, res) => {
     }
 };
 
-// Get one cost goal by id.
+/**
+ * @description Get a single cost goal by its ID, scoped to the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const getById = async (req, res) => {
     try {
         const goal = await costGoalService.getGoalById(req.user._id, req.params.id);
@@ -47,7 +67,13 @@ const getById = async (req, res) => {
     }
 };
 
-// Update an existing cost goal.
+/**
+ * @description Update an existing cost goal.
+ * Returns 400 when a conflicting goal already exists for the target period.
+ * @async
+ * @param {Object} req - Express request with `req.params.id`, `req.user._id`, and body.
+ * @param {Object} res - Express response object.
+ */
 const update = async (req, res) => {
     try {
         const { error } = updateGoal.validate(req.body);
@@ -68,7 +94,12 @@ const update = async (req, res) => {
     }
 };
 
-// Delete a cost goal.
+/**
+ * @description Delete a cost goal owned by the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user._id`.
+ * @param {Object} res - Express response object.
+ */
 const remove = async (req, res) => {
     try {
         const result = await costGoalService.deleteGoal(req.user._id, req.params.id);

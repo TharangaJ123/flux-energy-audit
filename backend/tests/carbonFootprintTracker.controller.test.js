@@ -1,8 +1,15 @@
+/**
+ * @file carbonFootprintTracker.controller.test.js
+ * @description Unit tests for the Carbon Footprint Tracker controller.
+ * Mongoose is mocked at the module level to prevent any database connection
+ * attempts during test runs. The carbon service is fully stubbed so each test
+ * verifies only controller-level logic: validation, status codes, and error mapping.
+ */
 const carbonController = require('../src/controllers/carbonFootprintTracker.controller');
 const carbonService = require('../src/services/carbonFootprintTracker.service');
 const mongoose = require('mongoose');
 
-// Mock mongoose to prevent DB connection in unit tests
+// Prevent Mongoose from attempting a real DB connection in the unit-test environment.
 jest.mock('mongoose', () => ({
     connect: jest.fn(),
     connection: {

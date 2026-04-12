@@ -1,7 +1,13 @@
 /**
- * Layout Component
- * Standard wrapper for all application pages. Provides the persistent Navbar,
- * consistent page margins, and a comprehensive footer with navigation links.
+ * @file Layout.js
+ * @description Reusable page wrapper for all application routes.
+ * Composes three vertically stacked regions:
+ *  1. `<Navbar>`  — Persistent top navigation bar (sticky).
+ *  2. `<main>`    — Flexible content slot rendered via `children`.
+ *  3. `<footer>`  — Brand description, navigation links, and legal copy.
+ *
+ * Using a shared Layout prevents code duplication across page components
+ * and ensures consistent margins, footers, and navigation on every view.
  */
 import React from 'react';
 import { Link } from 'react-router-dom';

@@ -1,6 +1,16 @@
+/**
+ * @file solarEstimator.test.js
+ * @description Integration tests for the Solar Estimator API.
+ * Sends real HTTP requests to the Express server (imported from `server.js`) and
+ * verifies that the calculation endpoint returns correct panel counts, financial
+ * projections, and appropriate 400 errors for invalid inputs.
+ * No external NREL API calls are made — the test relies on the static SL-average
+ * fallback when coordinates are not supplied.
+ */
 const request = require('supertest');
 const app = require('../src/server');
 
+// ── Solar Estimator API tests ────────────────────────────────────────────
 describe('Solar Estimator API', () => {
 
     it('should calculate solar potential based on rooftop area (without coordinates)', async () => {

@@ -1,7 +1,18 @@
+/**
+ * @file energyAuditManagement.controller.js
+ * @description Controller for energy audit operations with AI-driven analysis.
+ * Each handler validates incoming data, delegates business logic to the service
+ * layer, and maps domain errors to appropriate HTTP status codes.
+ */
 const energyAuditService = require('../services/energyAuditManagement.service');
 const { createAudit, updateAudit, simulateAudit } = require('../validations/energyAuditManagement.validation');
 
-// Handle creating a new energy audit with AI analysis
+/**
+ * @description Create a new energy audit record enriched with AI insights.
+ * @async
+ * @param {Object} req - Express request with `req.user.id` and validated body.
+ * @param {Object} res - Express response object.
+ */
 exports.createAudit = async (req, res) => {
     try {
         const { error } = createAudit.validate(req.body);
@@ -15,7 +26,12 @@ exports.createAudit = async (req, res) => {
     }
 };
 
-// Retrieve all energy audits for the authenticated user
+/**
+ * @description Retrieve all energy audits belonging to the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.user.id`.
+ * @param {Object} res - Express response object.
+ */
 exports.getAudits = async (req, res) => {
     try {
         const audits = await energyAuditService.getAudits(req.user.id);
@@ -26,7 +42,12 @@ exports.getAudits = async (req, res) => {
     }
 };
 
-// Retrieve a single audit by its unique ID
+/**
+ * @description Retrieve a single audit by its ID, scoped to the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user.id`.
+ * @param {Object} res - Express response object.
+ */
 exports.getAuditById = async (req, res) => {
     try {
         const audit = await energyAuditService.getAuditById(req.params.id, req.user.id);
@@ -38,7 +59,12 @@ exports.getAuditById = async (req, res) => {
     }
 };
 
-// Handle updating existing audits and re-triggering AI logic if needed
+/**
+ * @description Update an existing audit. Re-runs AI analysis when usage data changes.
+ * @async
+ * @param {Object} req - Express request with `req.params.id`, `req.user.id`, and body.
+ * @param {Object} res - Express response object.
+ */
 exports.updateAudit = async (req, res) => {
     try {
         const { error } = updateAudit.validate(req.body);
@@ -53,7 +79,12 @@ exports.updateAudit = async (req, res) => {
     }
 };
 
-// Remove an audit record from the system
+/**
+ * @description Permanently delete an audit record owned by the authenticated user.
+ * @async
+ * @param {Object} req - Express request with `req.params.id` and `req.user.id`.
+ * @param {Object} res - Express response object.
+ */
 exports.deleteAudit = async (req, res) => {
     try {
         await energyAuditService.deleteAudit(req.params.id, req.user.id);
@@ -65,7 +96,13 @@ exports.deleteAudit = async (req, res) => {
     }
 };
 
-// Process usage simulations using the AI engine
+/**
+ * @description Run a what-if simulation against an existing audit using the AI engine.
+ * Accepts a `changes` array describing hypothetical usage modifications.
+ * @async
+ * @param {Object} req - Express request with params, user, and `body.changes`.
+ * @param {Object} res - Express response object.
+ */
 exports.simulateChange = async (req, res) => {
     try {
         const { error } = simulateAudit.validate(req.body);
@@ -80,7 +117,13 @@ exports.simulateChange = async (req, res) => {
     }
 };
 
-// Handle interactive chat with AI based on audit results context
+/**
+ * @description Initiate or continue an AI chat conversation scoped to a specific audit.
+ * Passes the user's `message` and optional conversation `history` to the AI service.
+ * @async
+ * @param {Object} req - Express request with params, user, `body.message`, and optional `body.history`.
+ * @param {Object} res - Express response object.
+ */
 exports.chatWithAudit = async (req, res) => {
     try {
         const { message, history } = req.body;

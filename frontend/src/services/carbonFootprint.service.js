@@ -1,7 +1,12 @@
-// Service layer for carbon footprint data management
-// Handles all API calls for carbon tracking functionality
+/**
+ * @file carbonFootprint.service.js
+ * @description Service layer for carbon footprint data management.
+ * Wraps all Axios calls for the `/api/carbon` resource using the shared
+ * authenticated Axios instance defined in `api.js`.
+ */
 import api from './api';
 
+/** Base URL segment shared by all carbon footprint endpoints. */
 const CARBON_URL = '/carbon';
 
 const carbonService = {

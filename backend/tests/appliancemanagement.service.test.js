@@ -1,9 +1,16 @@
+/**
+ * @file appliancemanagement.service.test.js
+ * @description Unit tests for the Appliance Management service layer.
+ * Mongoose model methods and the weather service are Jest-mocked so business
+ * logic (calculations, data aggregation) can be verified in isolation without
+ * a live database or external API.
+ */
 const Appliance = require('../src/models/appliancemanagement.model');
 const applianceService = require('../src/services/appliancemanagement.service');
 const weatherService = require('../src/services/weatherService');
 const { runInTransaction } = require('../src/util/transaction');
 
-// Mock dependencies
+// Mock dependencies — Appliance model, weather API, and transaction utility.
 jest.mock('../src/models/appliancemanagement.model');
 jest.mock('../src/services/weatherService');
 jest.mock('../src/util/transaction');

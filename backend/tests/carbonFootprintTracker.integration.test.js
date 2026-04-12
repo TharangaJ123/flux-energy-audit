@@ -1,6 +1,16 @@
+/**
+ * @file carbonFootprintTracker.integration.test.js
+ * @description Integration tests for the Carbon Footprint Tracker REST API.
+ *
+ * The Mongoose model is hoisted-mocked (must be declared before any `require`
+ * that indirectly imports it) to avoid real DB writes while still exercising
+ * the full HTTP layer. Auth middleware and the transaction utility are also
+ * stubbed for deterministic test behaviour.
+ */
 const request = require('supertest');
 const mongoose = require('mongoose');
 
+// ── Hoisted mocks (must appear before createApp / model imports) ──────────────
 // Mock CarbonFootprint model - HOISTED
 jest.mock('../src/models/carbonFootprintTracker.model', () => {
     const mockRecord = {

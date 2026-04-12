@@ -1,4 +1,11 @@
-// Unit tests for appliance controller
+/**
+ * @file appliancemanagement.controller.test.js
+ * @description Unit tests for the Appliance Management controller.
+ * All service calls are Jest-mocked so each test verifies only the controller logic:
+ * input validation, HTTP status code selection, and response shaping.
+ */
+// Mock the service layer before requiring the controller so the module resolution
+// captures the mocked version rather than the real implementation.
 jest.mock('../src/services/appliancemanagement.service', () => ({
     addAppliance: jest.fn(),
     getAppliancesByUser: jest.fn(),

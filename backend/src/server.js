@@ -1,3 +1,12 @@
+/**
+ * @file server.js
+ * @description Production HTTP server entry point for the Flux Energy Audit API.
+ * Loads environment variables, establishes a MongoDB connection, registers all
+ * route modules, mounts the Swagger UI, and starts the Express listener.
+ *
+ * Note: The `createApp` factory in `app.js` is used by the test suite so that
+ * routes can be imported without opening a network port.
+ */
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');

@@ -1,7 +1,12 @@
 /**
- * Navbar Component
- * Dynamic navigation bar that updates based on authentication state.
- * Monitors localStorage for token changes on every route update.
+ * @file Navbar.js
+ * @description Responsive navigation bar for the Flux Energy Audit application.
+ * Re-reads `localStorage` on every route change so the login/logout state
+ * is always in sync without requiring a full page reload.
+ *
+ * Auth state:
+ *  - `isLoggedIn` — boolean derived from the presence of a JWT token in localStorage.
+ *  - `user`       — parsed user object (name, role) or null when not authenticated.
  */
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -17,15 +22,17 @@ const Navbar = () => {
         if (token && userData) {
             setIsLoggedIn(true);
             try {
+                // Parse the user JSON stored at login; fall back to null on corrupt data.
                 setUser(JSON.parse(userData));
             } catch (e) {
+                // Silently clear invalid user data to prevent broken UI.
                 setUser(null);
             }
         } else {
             setIsLoggedIn(false);
             setUser(null);
         }
-    }, [location]); // Re-check on every navigation
+    }, [location]); // Re-run the effect whenever the active route changes.
 
     return (
         <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 h-20 flex items-center shadow-sm">

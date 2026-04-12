@@ -1,16 +1,27 @@
 /**
- * Calculates Solar potential based on rooftop area (sqft)
- * 
- * Logic Assumptions (Based on Sri Lanka context):
- * - Panel size (e.g., 550W): ~22 sqft (roughly 2.2m x 1.1m)
- * - Space efficiency (gaps for maintenance): 20% additional space
- * - Unit Generation: 1kWp produces ~120 units (kWh) per month on average in SL.
- * - Installation Cost: ~240,000 LKR per kWp (Standard on-grid system).
- * - Savings per Unit: ~50-65 LKR based on average high-consumption domestic tariff.
+ * @file solarEstimator.controller.js
+ * @description Controller for solar potential estimation specific to the Sri Lankan context.
+ * Performs static panel capacity calculations and, when GPS coordinates are supplied,
+ * fetches real-time generation data from the NREL PVWatts v8 API.
+ *
+ * Key assumptions (Sri Lanka domestic market):
+ * - Panel size: ~24.5 sq ft (≈ 550W, 2.2m × 1.1m footprint)
+ * - Capacity factor: 1 kWp generates ~120 kWh/month on average
+ * - Installation cost: ~240,000 LKR per kWp (standard on-grid system)
+ * - Savings per unit: ~60 LKR (averaged across domestic tariff tiers)
  */
 
 const axios = require('axios');
 
+/**
+ * @description Calculate the solar generation potential for a given rooftop.
+ * Returns technical specifications, financial projections, and environmental metrics.
+ * When `lat`/`lon` are provided the NREL PVWatts API is called for real irradiance
+ * data; without them a conservative Sri Lankan average (120 kWh/kWp/month) is used.
+ * @async
+ * @param {Object} req - Express request with `body.rooftopArea` (sq ft), optional `body.lat`, `body.lon`.
+ * @param {Object} res - Express response object.
+ */
 const calculateSolarPotential = async (req, res) => {
     try {
         const { rooftopArea, lat, lon } = req.body;

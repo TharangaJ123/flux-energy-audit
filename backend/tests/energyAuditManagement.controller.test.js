@@ -1,4 +1,10 @@
-// Unit tests for energy audit controller validation and missing-resource behavior.
+/**
+ * @file energyAuditManagement.controller.test.js
+ * @description Unit tests for the Energy Audit Management controller.
+ * Covers missing-field rejection for the AI chat endpoint and
+ * 404 propagation when the service throws an `'Audit not found'` error.
+ * The energy audit service is fully mocked.
+ */
 jest.mock('../src/services/energyAuditManagement.service', () => ({
     createAudit: jest.fn(),
     getAudits: jest.fn(),

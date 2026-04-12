@@ -1,4 +1,10 @@
-// Unit tests for the user controller's validation and error mapping behavior.
+/**
+ * @file userManagement.controller.test.js
+ * @description Unit tests for the User Management controller.
+ * Validates registration, login, and profile update flows including
+ * Joi validation rejection and domain error mapping (e.g., 401 on bad credentials).
+ * The user service is fully mocked to isolate controller behaviour.
+ */
 jest.mock('../src/services/userManagement.service', () => ({
     registerUser: jest.fn(),
     loginUser: jest.fn(),

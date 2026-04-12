@@ -1,7 +1,15 @@
+/**
+ * @file setup.js
+ * @description Global Jest setup/teardown hooks shared by all test suites.
+ * Establishes a single MongoDB connection before any test runs and closes it
+ * after the full suite completes. A short `serverSelectionTimeoutMS` (2 s)
+ * prevents test runs from hanging when the database is unreachable; the suites
+ * that require a live DB will then fail with descriptive messages rather than timing out.
+ */
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-// Start connection to existing database before tests
+// Open a MongoDB connection once before any test file begins executing.
 beforeAll(async () => {
     if (mongoose.connection.readyState === 0) {
         if (process.env.MONGO_URI) {
