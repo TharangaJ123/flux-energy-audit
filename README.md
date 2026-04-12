@@ -89,11 +89,12 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/users/register` | Register a new user | No |
 | `POST` | `/api/users/login` | Login and receive a JWT | No |
-| `GET` | `/api/users/profile` | Get logged-in user's profile | Yes |
+| `GET` | `/api/users/me` | Get logged-in user's profile | Yes |
+| `PUT` | `/api/users/me` | Update user profile data | Yes |
+| `DELETE`| `/api/users/me` | Delete user account | Yes |
 
 **Example Request: User Login (`POST /api/users/login`)**
 ```json
-// Request Body
 {
   "email": "user@example.com",
   "password": "securepassword123"
@@ -104,11 +105,7 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 {
   "message": "Login successful",
   "token": "eyJhbGciOiJIUzI1NiIsInR...",
-  "user": {
-    "id": "64f1a2...",
-    "name": "Jane Doe",
-    "email": "user@example.com"
-  }
+  "user": { "id": "64f1a2...", "name": "Jane Doe", "email": "user@example.com" }
 }
 ```
 
@@ -118,6 +115,8 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/appliances` | Register a new appliance | Yes |
 | `GET` | `/api/appliances` | List all appliances for user | Yes |
+| `GET` | `/api/appliances/audit`| Get weather-aware energy audit | Yes |
+| `GET` | `/api/appliances/stats`| Get overall device statistics | Yes |
 | `GET` | `/api/appliances/:id`| Retrieve specific appliance | Yes |
 | `PUT` | `/api/appliances/:id`| Update appliance parameters | Yes |
 | `DELETE`| `/api/appliances/:id`| Remove an appliance record | Yes |
@@ -153,22 +152,26 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/carbon` | Log monthly consumption data | Yes |
-| `GET` | `/api/carbon` | View carbon history & footprint| Yes |
+| `POST` | `/api/carbon` | Create a new footprint record | Yes |
+| `GET` | `/api/carbon` | List all historical records | Yes |
+| `GET` | `/api/carbon/:id` | Get details of a record | Yes |
+| `PUT` | `/api/carbon/:id` | Update an existing record | Yes |
+| `DELETE`| `/api/carbon/:id` | Delete a footprint record | Yes |
 
-**Example Request: Log Data (`POST /api/carbon`)**
+**Example Request: Add Record (`POST /api/carbon`)**
 ```json
 {
-  "month": "April",
-  "year": 2024,
-  "electricityUsedKwh": 350
+  "month": "March",
+  "year": 2026,
+  "electricity": 150,
+  "gasData": { "selections": ["LPG"], "amounts": { "LPG": 12.5 } }
 }
 ```
 **Example Response (201 Created):**
 ```json
 {
-  "message": "Data logged successfully",
-  "data": { "carbonFootprintKg": 145.2 }
+  "message": "Record created successfully",
+  "data": { "co2Emission": 185.4, "status": "Moderate", "month": "March", "year": 2026 }
 }
 ```
 
@@ -176,25 +179,25 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/audits` | Create an energy audit | Yes |
-| `GET` | `/api/audits` | Retrieve user audit history | Yes |
-| `POST` | `/api/audits/chat` | AI-driven conversational insights| Yes |
-| `POST` | `/api/audits/simulate`| Habit change impact projection | Yes |
+| `POST` | `/api/energy-audits` | Create audit & get AI insights | Yes |
+| `GET` | `/api/energy-audits` | List all previous audits | Yes |
+| `GET` | `/api/energy-audits/:id`| Get specific audit details | Yes |
+| `PUT` | `/api/energy-audits/:id`| Update and re-analyze audit | Yes |
+| `DELETE`| `/api/energy-audits/:id`| Remove audit record | Yes |
+| `POST` | `/api/energy-audits/:id/simulate` | Predict behavior change impact| Yes |
+| `POST` | `/api/energy-audits/:id/chat` | AI Chat based on audit context| Yes |
 
-**Example Request: Run Simulation (`POST /api/audits/simulate`)**
+**Example Request: Chat with AI (`POST /api/energy-audits/64f.../chat`)**
 ```json
 {
-  "proposedChanges": [
-    { "applianceId": "64f...", "newUsageHours": 4 }
-  ]
+  "message": "How can I reduce my AC consumption specifically?",
+  "history": []
 }
 ```
 **Example Response (200 OK):**
 ```json
 {
-  "message": "Simulation complete",
-  "projectedSavingsKwh": 48.5,
-  "financialSavings": 12.50
+  "response": "Based on your audit, your AC runs 8 hours at 1500W. Try setting the temperature to 24°C..."
 }
 ```
 
@@ -202,21 +205,21 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/solar/estimate`| Solar capacity & ROI calculation | No |
+| `POST` | `/api/solar/estimate`| Calculate Solar ROI & Capacity | No |
 
-**Example Request: Estimate Solar (`POST /api/solar/estimate`)**
+**Example Request: Solar ROI (`POST /api/solar/estimate`)**
 ```json
 {
-  "roofSizeSqMeters": 50,
-  "location": "Colombo"
+  "roofSizeSqMeters": 40,
+  "location": "Kandy"
 }
 ```
 **Example Response (200 OK):**
 ```json
 {
-  "estimatedCapacityKw": 7.5,
+  "estimatedCapacityKw": 6.0,
   "projectedAnnualSavingsKwh": 10500,
-  "estimatedROIYears": 4.2
+  "estimatedROIYears": 3.5
 }
 ```
 
@@ -224,23 +227,33 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/costs` | Log monthly electricity cost | Yes |
-| `POST` | `/api/costs/estimate`| Tariff-based bill estimation | Yes |
-| `POST` | `/api/costs/goals` | Set monthly/yearly saving goals | Yes |
-| `GET` | `/api/costs/ai-insights`| AI-driven spending patterns | Yes |
+| `POST` | `/api/costs` | Log monthly cost (w/ bill upload)| Yes |
+| `GET` | `/api/costs` | List user cost history | Yes |
+| `POST` | `/api/costs/estimate`| Tariff-based bill calculation | Yes |
+| `GET` | `/api/costs/ai-insights`| Get AI spending patterns | Yes |
+| `GET` | `/api/costs/:id` | Get specific cost entry | Yes |
+| `PUT` | `/api/costs/:id` | Update a cost entry | Yes |
+| `DELETE`| `/api/costs/:id` | Delete a cost entry | Yes |
+| `POST` | `/api/costs/goals` | Set a new saving goal | Yes |
+| `GET` | `/api/costs/goals` | List all saving goals | Yes |
+| `GET` | `/api/costs/goals/:id`| Get details of a goal | Yes |
+| `PUT` | `/api/costs/goals/:id`| Update a saving goal | Yes |
+| `DELETE`| `/api/costs/goals/:id`| Remove a saving goal | Yes |
 
-**Example Request: Set Goal (`POST /api/costs/goals`)**
+**Example Request: Bill Estimation (`POST /api/costs/estimate`)**
 ```json
 {
-  "targetMonthlyCost": 2500,
-  "targetCurrency": "LKR"
+  "units": 150,
+  "month": 4,
+  "provider": "CEB",
+  "peakUnits": 30
 }
 ```
-**Example Response (201 Created):**
+**Example Response (200 OK):**
 ```json
 {
-  "message": "Goal configured successfully",
-  "data": { "targetMonthlyCost": 2500 }
+  "estimatedBill": 6250.75,
+  "summary": { "energyCharge": 5200, "fixedCharge": 400, "tax": 650.75 }
 }
 ```
 
