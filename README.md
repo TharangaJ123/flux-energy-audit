@@ -263,13 +263,8 @@ The Flux API follows RESTful architectural principles. It accepts and returns JS
 
 The Flux Energy Audit system maintains an "Excellent" reliability standard through rigorous automated testing, targeting high coverage for unit, integration, and performance layers.
 
-### **i. Testing Environment Configuration Details**
-- **Test Frameworks**: `Jest` and `Supertest` (Backend API), `React Testing Library` (Frontend Components).
-- **In-Memory/Isolated Databases**: Backend tests utilize a mock MongoDB setup or isolated database instances via `npm test` configuration to prevent data contamination.
-- **Load Testing**: Uses `Artillery.io` for robust endpoint stress simulation.
-
-### **ii. How to Run Unit Tests**
-Unit tests isolate business logic, services, and controllers without external dependencies.
+### **i. How to Run Unit Tests**
+Unit tests isolate business logic, services, and controllers without external dependencies to ensure core logic correctness.
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -278,35 +273,40 @@ Unit tests isolate business logic, services, and controllers without external de
    ```bash
    npm test
    ```
-   *(To test a specific module, e.g., appliance controller: `npx jest tests/appliancemanagement.controller.test.js`)*
+   *(To test a specific module, e.g., user controller: `npx jest tests/userManagement.controller.test.js`)*
 3. **Verify Code Coverage**:
    ```bash
    npm run test:coverage
    ```
-   This generates an HTML report in `backend/coverage/` verifying the percentage of code executed by tests.
+   This generates an HTML report in `backend/coverage/` verifying the percentage of code executed by tests. High coverage is maintained across all core services.
 
-### **iii. Integration Testing Setup and Execution**
-Integration testing ensures different modules (Router → Controller → Services → Database) function correctly together.
-1. Ensure your `.env` contains valid configurations (often Jest overrides this with a test DB URI).
-2. Execute integration-specific tests using:
+### **ii. Integration Testing Setup and Execution**
+Integration testing ensures different modules (Router → Controller → Services → Database) function correctly together as a unified system.
+1. **Setup**: Ensure your `.env` contains valid configurations. The test suite automatically utilizes a separate test configuration or mock to prevent production data contamination.
+2. **Execution**: Execute all integration-specific tests using:
    ```bash
    npx jest *.integration.test.js
    ```
-   *(e.g., testing full appliance life cycle via `appliancemanagement.integration.test.js`)*
+   This validates the full request-response lifecycle, including middleware and database persistence for routes like `/api/appliances` and `/api/users`.
 
-### **iv. Performance Testing Setup and Execution**
-We use Artillery to validate system performance under load.
-1. Ensure the backend server is running in a separate terminal:
+### **iii. Performance Testing Setup and Execution**
+We use **Artillery.io** to validate system stability and responsiveness under concurrent user load.
+1. **Preparation**: Start the backend server in a dedicated terminal:
    ```bash
    cd backend
    npm start
    ```
-2. Run the predefined Artillery scenarios:
+2. **Execution**: Run the predefined Artillery scenarios in a second terminal:
    ```bash
    cd backend
    npm run test:performance
    ```
-3. Load test definitions can be modified in `backend/tests/performance/appliance-load.yml` to alter virtual user (VUs) injection rates and concurrent requests.
+3. **Configuration**: Load test definitions (inject rates, duration, and virtual users) can be modified in `backend/tests/performance/appliance-load.yml` or `costs-load.yml` to stress-test specific modules.
+
+### **iv. Testing Environment Configuration Details**
+- **Frameworks**: `Jest` and `Supertest` for API testing; `React Testing Library` for frontend component validation.
+- **Environment**: Backend tests are configured to run in a `test` environment, often using an in-memory database or a dedicated MongoDB test cluster.
+- **Data Integrity**: Tests include setup and teardown hooks (in `tests/setup.js`) to ensure a clean state before every test run, preventing cross-test pollution.
 
 ---
 
